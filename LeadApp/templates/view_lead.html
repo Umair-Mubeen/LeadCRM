@@ -1,0 +1,432 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>LeadCRM | Manage Leads</title>
+
+  <link rel="stylesheet" href="{% static 'css/adminlte.css' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+
+  <style>
+    .collapse-row td {
+      background: #f8f9fa;
+    }
+    .history-item {
+      border-left: 3px solid #dc3545;
+      padding-left: 10px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+
+<body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">
+
+<div class="app-wrapper">
+  {% include 'navbar.html' %}
+  {% include 'sidebar.html' %}
+
+  
+<main class="app-main">
+<div class="container-fluid mt-4">
+
+   <div class="app-content-header">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-sm-6"><h3 class="mb-0">LeadCRM</h3></div>
+              <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-end">
+                  <li class="breadcrumb-item"><a href="/" style="color:black">Home</a></li>
+                  <li class="breadcrumb-item" aria-current="page"><a href="{% url 'AddLead' %}" style="color:black">Create Lead  </a></li>
+
+                </ol>
+              </div>
+            </div>
+        
+          </div>
+        
+        </div>
+
+<div class="card">
+<div class="card-header">
+  <h3 class="card-title">Manage Leads</h3>
+</div>
+
+<div class="card-body">
+
+<table class="table table-bordered table-hover align-middle">
+<thead class="table-light">
+<tr>
+  <th>#</th>
+  <th>Name</th>
+  <th>Assigned</th>
+  <th>Priority</th>
+  <th>Status</th>
+  <th>Next Followup</th>
+  <th>Source</th>
+  <th>Budget</th>
+  <th>Added</th>
+  <th>Created By</th>
+  <th width="120">Actions</th>
+  <th>History</th>
+</tr>
+</thead>
+
+<tbody id="leadAccordion">
+
+{% for lead in leads %}
+
+<tr class="{% if lead.is_converted %}table-success{% endif %}" target-id="{{lead.id}}">
+  <td>{{ forloop.counter }}</td>
+
+  <td>
+    <strong>{{ lead.full_name }}</strong><br>
+    <small class="text-muted">{{ lead.mobile_number }}</small>
+  </td>
+
+  <td>
+    {% for u in lead.assigned_to.all %}
+      <span class="badge bg-info">{{ u.username }}</span>
+    {% empty %}
+      <span class="text-muted">Unassigned</span>
+    {% endfor %}
+  </td>
+
+  <td>
+    {% if lead.priority == "high" %}
+      <span class="badge bg-danger">High</span>
+    {% elif lead.priority == "medium" %}
+      <span class="badge bg-warning text-dark">Medium</span>
+    {% else %}
+      <span class="badge bg-success">Low</span>
+    {% endif %}
+  </td>
+
+  <td>
+    <span class="badge bg-{{ lead.get_status_badge }}">
+      {{ lead.get_status_display }}
+    </span>
+  </td>
+
+  <td>
+    {% if lead.latest_followup and lead.latest_followup.next_followup_date %}
+      {{ lead.latest_followup.next_followup_date }}
+    {% else %}
+      —
+    {% endif %}
+  </td>
+
+  <td>{{ lead.get_source_display }}</td>
+  <td>{{ lead.budget|default:"—" }}</td>
+  <td>{{ lead.date_added|date:"Y-m-d" }}</td>
+  <td>{{ lead.lead_created_by }}</td>
+
+  <td>
+    {% if not lead.is_converted %}
+      <div class="dropdown">
+        <button class="btn btn-sm btn-secondary dropdown-toggle" data-bs-toggle="dropdown">
+          Actions
+        </button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" href="{% url 'EditLead' lead.id %}?next={{ request.get_full_path|urlencode }}">Edit</a></li>
+          <li><a class="dropdown-item" href="{% url 'AddEditFollowup' lead.id %}?next={{ request.get_full_path|urlencode }}">Add Followup</a></li>
+        </ul>
+      </div>
+    {% else %}
+      <span class="badge bg-success">Converted</span>
+    {% endif %}
+  </td>
+
+  <td>
+    <button class="btn btn-sm btn-outline-secondary"
+            data-bs-toggle="collapse"
+            data-bs-target="#collapse{{ lead.id }}"
+            aria-expanded="false">
+      <i class="bi bi-chevron-down"></i>
+    </button>
+  </td>
+</tr>
+
+<!-- COLLAPSE -->
+<tr class="collapse-row">
+<td colspan="12" class="p-0">
+
+<div id="collapse{{ lead.id }}" class="collapse" data-bs-parent="#leadAccordion">
+
+<div class="p-4 bg-light">
+
+<!-- BASIC INFO -->
+<div class="row mb-4">
+  <div class="col-md-6">
+    <h6 class="fw-bold text-primary">
+      <i class="bi bi-person-fill"></i> Lead Information
+    </h6>
+    <p><strong>Name:</strong> {{ lead.full_name }}</p>
+    <p><strong>Email:</strong> {{ lead.email }}</p>
+    <p style="text-align:justify;"><strong>Brief:</strong> {{ lead.lead_brief|default:"—" }}</p>
+  </div>
+
+  <div class="col-md-6">
+    <h6 class="fw-bold text-primary">
+      <i class="bi bi-briefcase-fill"></i> Business Details
+    </h6>
+    <p><strong>Status:</strong> {{ lead.get_status_display }}</p>
+    <p><strong>Budget:</strong> {{ lead.budget|default:"—" }}</p>
+  </div>
+</div>
+
+<!-- ================= DEAL SECTION ================= -->
+{% if lead.is_converted %}
+<hr>
+
+<div class="d-flex justify-content-between align-items-center">
+  <h6 class="fw-bold text-success mb-0">
+    <i class="bi bi-cash-stack"></i> Deal Information
+  </h6>
+
+  {% if request.user.profile.is_admin %}
+    <div>
+      {% if lead.deal %}
+        <a href="{% url 'CreateDeal' lead.id  %}?next={{ request.get_full_path|urlencode }}"
+           class="btn btn-sm btn-outline-success">
+           <i class="bi bi-pencil-square"></i> Update Deal
+        </a>
+
+      <a href="{% url 'AddInstallment' lead.deal.id %}?next={{ request.get_full_path|urlencode }}"
+   class="btn btn-sm btn-outline-primary">
+   <i class="bi bi-plus-circle"></i> Add Payment
+</a>
+      {% else %}
+        <a href="{% url 'CreateDeal' lead.id %}?next={{ request.get_full_path|urlencode }}"
+           class="btn btn-sm btn-success">
+           <i class="bi bi-plus-circle"></i> Add Deal
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+{% if lead.deal %}
+
+<div class="mt-3 p-3 bg-light rounded border">
+
+  <!-- Deal Value -->
+  <p class="mb-1">
+    <strong>Total Deal Value:</strong>
+    ${{ lead.deal.deal_value|floatformat:2 }}
+  </p>
+
+  <!-- Payment Status -->
+  <p class="mb-2">
+    <strong>Status:</strong>
+
+    {% if lead.deal.is_paid %}
+      <span class="badge bg-success">Paid</span>
+    {% elif lead.deal.is_partial %}
+      <span class="badge bg-info text-dark">Partial</span>
+    {% else %}
+      <span class="badge bg-warning text-dark">Pending</span>
+    {% endif %}
+  </p>
+
+  <!-- Paid / Remaining -->
+  <p class="mb-1">
+    <strong>Amount Paid:</strong>
+    ${{ lead.deal.amount_paid|floatformat:2 }}
+  </p>
+
+  <p class="mb-2">
+    <strong>Remaining:</strong>
+    ${{ lead.deal.remaining_amount|floatformat:2 }}
+  </p>
+
+  <!-- Progress Bar -->
+  {% with percentage=lead.deal.amount_paid|floatformat:2 %}
+  <div class="progress mt-2" style="height: 20px;">
+  <div class="progress-bar bg-success"
+       role="progressbar"
+       style="width: {{ lead.deal.payment_percentage }}%">
+       {{ lead.deal.payment_percentage }}%
+  </div>
+</div>
+  {% endwith %}
+
+  <!-- Closing Date -->
+  <p class="mt-3 mb-0">
+    <strong>Closing Date:</strong>
+    {{ lead.deal.closing_date }}
+  </p>
+
+</div>
+
+{% endif %}
+{% endif %}
+
+<hr>
+
+<!-- ================= INSTALLMENT HISTORY ================= -->
+{% if lead.deal %}
+<hr>
+
+<h6 class="fw-bold text-primary">
+  <i class="bi bi-clock-history"></i> Payment Installment History
+</h6>
+
+{% if lead.deal.installments.all %}
+
+<div class="table-responsive mt-3">
+  <table class="table table-bordered table-sm align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>#</th>
+        <th>Date</th>
+        <th>Amount</th>
+        <th>Note</th>
+        <th>Added By</th>
+        {% if request.user.profile.is_admin %}
+        <th width="120">Actions</th>
+        {% endif %}
+      </tr>
+    </thead>
+
+    <tbody>
+
+      {% for installment in lead.deal.installments.all %}
+      <tr>
+
+        <td>{{ forloop.counter }}</td>
+
+        <td>
+          {{ installment.created_at|date:"d M Y H:i" }}
+        </td>
+
+        <td>
+          <strong class="text-success">
+            ${{ installment.amount|floatformat:2 }}
+          </strong>
+        </td>
+
+        <td>
+          {{ installment.note|default:"—" }}
+        </td>
+
+       <td>
+  {{ installment.created_by.username|default:"System" }}
+</td>
+
+        {% if request.user.profile.is_admin %}
+        <td>
+          <a href="{% url 'DeleteInstallment' installment.id %}"
+             class="btn btn-sm btn-outline-danger"
+             onclick="return confirm('Are you sure you want to delete this installment?')">
+             <i class="bi bi-trash"></i>
+          </a>
+        </td>
+        {% endif %}
+
+      </tr>
+      {% endfor %}
+
+    </tbody>
+
+    <tfoot class="table-light">
+      <tr>
+        <th colspan="2">Total Paid</th>
+        <th colspan="4" class="text-success">
+          ${{ lead.deal.amount_paid|floatformat:2 }}
+        </th>
+      </tr>
+    </tfoot>
+
+  </table>
+</div>
+
+{% else %}
+  <p class="text-muted mt-2">No installments added yet.</p>
+{% endif %}
+
+{% endif %}
+<hr>
+
+<!-- FOLLOWUPS -->
+<h6 class="fw-bold text-success">
+  <i class="bi bi-telephone-fill"></i> Followup History
+</h6>
+
+{% for f in lead.lead_followups.all %}
+  <div class="border rounded p-2 mb-2 bg-white">
+    <strong>{{ f.created_by.username }}</strong>
+    <small class="text-muted">
+      ({{ f.created_by.profile.get_role_display }})
+      - {{ f.created_at|date:"d M Y H:i" }}
+    </small>
+    <p>{{ f.note }}</p>
+  </div>
+{% empty %}
+  <p class="text-muted">No followups yet</p>
+{% endfor %}
+
+<hr>
+
+<!-- STATUS HISTORY -->
+<h6 class="fw-bold text-danger">
+  <i class="bi bi-clock-history"></i> Status History
+</h6>
+
+{% for s in lead.status_history.all %}
+  <div class="history-item">
+    <small>
+      <strong>{{ s.old_status|capfirst }}</strong>
+      →
+      <strong>{{ s.new_status|capfirst }}</strong>
+      <br>
+      By {{ s.changed_by.username }}
+      ({{ s.changed_by.profile.get_role_display }})
+      on {{ s.changed_at|date:"d M Y H:i" }}
+    </small>
+  </div>
+{% empty %}
+  <p class="text-muted">No status changes recorded</p>
+{% endfor %}
+
+</div>
+</div>
+</td>
+</tr>
+
+{% empty %}
+<tr>
+<td colspan="12" class="text-center text-muted">
+  No leads found.
+</td>
+</tr>
+{% endfor %}
+
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</main>
+
+{% include 'footer.html' %}
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/adminlte.js' %}"></script>
+
+</body>
+</html>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    if (window.location.hash) {
+        var target = document.querySelector(window.location.hash);
+        if (target) {
+            var collapse = new bootstrap.Collapse(target, { toggle: true });
+            target.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+    }
+});
+</script>

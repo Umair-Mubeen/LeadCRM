@@ -1,0 +1,211 @@
+  <html>
+    {% load static %}
+   <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title> LeadCRM |  {% if edit_user %} Edit User {% else %} Create User {% endif %} </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#007bff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
+    <meta name="title" content="AdminLTE v4 | Dashboard" />
+    <meta name="author" content="ColorlibHQ" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <link rel="preload" href="{% static 'css/adminlte.css' %}" as="style" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
+      integrity="sha256-tXJfXfp6Ewt1ilPzLDtQnJV4hclT9XuaZUKyUvmyr+Q="
+      crossorigin="anonymous"
+      media="print"
+      onload="this.media='all'"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="{% static 'css/adminlte.css' %}" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.css"
+      integrity="sha256-4MX+61mt9NVvvuPjUWdUdyfZfxSB1/Rf9WtqRHgG5S0="
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/css/jsvectormap.min.css"
+      integrity="sha256-+uGLJmmTKOqBr+2E6KDYs/NRsHxSkONXFHUL0fy2O/4="
+      crossorigin="anonymous"
+    />
+  </head>
+    <body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">
+    
+    <div class="app-wrapper">
+        {% include 'navbar.html' %}
+        {% include 'sidebar.html' %}
+ <main class="app-main" id="main" tabindex="-1">
+      
+        <div class="app-content-header">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-sm-6"><h3 class="mb-0">LeadCRM | {% if edit_user %} Edit User {% else %} Create User {% endif %} </h3></div>
+              <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-end">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}" style="color:black">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'viewusers' %}" style="color:black">Manage Users</a></li>
+
+                  <li class="breadcrumb-item active" aria-current="page">
+                    {% if edit_user %} Edit User {% else %} Create User {% endif %} 
+                  </li>
+                </ol>
+              </div>
+            </div>
+        
+          </div>
+        
+        </div>
+        <div class="app-content">
+     
+          <div class="container-fluid">
+
+            <div class="card card-info card-outline mb-4">
+                  <div class="card-header"><div class="card-title">Lead Generation</div></div>
+    <form method="post"
+      action="{% url 'AddEditUser' %}{% if edit_user %}?userId={{ edit_user.id }}{% endif %}">
+
+    {% csrf_token %}
+    
+    <div class="card-body">
+        <div class="row g-3">
+
+            <!-- First Name -->
+            <div class="col-md-6">
+                <label class="form-label">First Name</label>
+                <input type="text" class="form-control" name="first_name"
+                       value="{{ edit_user.first_name|default:'' }}"
+                       required>
+            </div>
+
+            <!-- Last Name -->
+            <div class="col-md-6">
+                <label class="form-label">Last Name</label>
+                <input type="text" class="form-control" name="last_name"
+                       value="{{ edit_user.last_name|default:'' }}"
+                       required>
+            </div>
+
+            <!-- Username -->
+            <div class="col-md-6">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-control" name="username"
+                       value="{{ edit_user.username|default:'' }}"
+                       {% if edit_user %}readonly{% endif %}
+                       required>
+            </div>
+
+            <!-- Email -->
+            <div class="col-md-6">
+                <label class="form-label">Email Address</label>
+                <input type="email" class="form-control" name="email"
+                       value="{{ edit_user.email|default:'' }}"
+                       required>
+            </div>
+
+            <!-- Password -->
+            <div class="col-md-6">
+                <label class="form-label">
+                    Password {% if edit_user %}(Leave blank to keep same){% endif %}
+                </label>
+                <input type="password" class="form-control" name="password"
+                       {% if not edit_user %}required{% endif %}>
+            </div>
+
+            <!-- Role -->
+            <div class="col-md-6">
+                <label class="form-label">Select Role</label>
+                <select class="form-control" name="role" required>
+                    <option value="">Select Role</option>
+
+                    <option value="ADMIN"
+                        {% if profile.role == "ADMIN" %}selected{% endif %}>
+                        Admin
+                    </option>
+
+                    <option value="LGS"
+                        {% if profile.role == "LGS" %}selected{% endif %}>
+                        Lead Generation Specialist
+                    </option>
+
+                    <option value="SALESMAN"
+                        {% if profile.role == "SALESMAN" %}selected{% endif %}>
+                        Sales Man
+                    </option>
+                </select>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="card-footer">
+        <button class="btn btn-primary" type="submit">
+            {% if edit_user %}Update User{% else %}Create User{% endif %}
+        </button>
+    </div>
+
+</form>
+
+
+
+                </div>
+          </div>
+     
+        </div>
+      </main>
+        {% include 'footer.html' %}
+        
+        
+    </div>
+
+    </body>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script src="{% static 'js/adminlte.js' %}"></script>
+
+     <script
+      src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"
+      crossorigin="anonymous"
+    ></script>
+
+     <script
+      src="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.min.js"
+      integrity="sha256-+vh8GkaU7C9/wbSLIcwq82tQ2wTf44aOHA8HlBMwRI8="
+      crossorigin="anonymous"
+    ></script>
+
+     <script
+      src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/js/jsvectormap.min.js"
+      integrity="sha256-/t1nN2956BT869E6H4V1dnt0X5pAQHPytli+1nTZm2Y="
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/maps/world.js"
+      integrity="sha256-XPpPaZlU8S/HWf7FZLAncLg2SAkP8ScUTII89x9D3lY="
+      crossorigin="anonymous"
+    ></script>
+    </html>

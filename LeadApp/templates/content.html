@@ -1,0 +1,232 @@
+<main class="app-main" id="main" tabindex="-1">
+
+<style>
+.dashboard-card {
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+}
+.dashboard-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+.dashboard-section-title {
+    font-weight: 600;
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+</style>
+
+<div class="app-content-header">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center">
+      <h4 class="mb-0 fw-semibold">📊 CRM Dashboard Overview</h4>
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item">
+          <a href="{% url 'dashboard' %}" class="text-dark">Home</a>
+        </li>
+        <li class="breadcrumb-item active">Dashboard</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<div class="app-content">
+<div class="container-fluid">
+
+<!-- ===================== LEAD STATS ===================== -->
+<div class="dashboard-section-title">Lead Performance</div>
+
+<div class="row g-3">
+
+  <div class="col-md-3">
+    <a href="{% url 'ViewLead' %}" class="text-decoration-none">
+      <div class="info-box dashboard-card shadow-sm">
+        <span class="info-box-icon bg-primary text-white">
+          <i class="bi bi-people-fill"></i>
+        </span>
+        <div class="info-box-content">
+          <span class="info-box-text text-dark">Total Leads</span>
+          <span class="info-box-number text-dark">{{ total_leads }}</span>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-md-3">
+    <div class="info-box dashboard-card shadow-sm">
+      <span class="info-box-icon bg-info text-white">
+        <i class="bi bi-calendar-event-fill"></i>
+      </span>
+      <div class="info-box-content">
+        <span class="info-box-text text-dark">Today Leads</span>
+        <span class="info-box-number text-dark">{{ today_leads }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <a href="{% url 'ViewLead' %}?status=won" class="text-decoration-none">
+      <div class="info-box dashboard-card shadow-sm">
+        <span class="info-box-icon bg-success text-white">
+          <i class="bi bi-check-circle-fill"></i>
+        </span>
+        <div class="info-box-content">
+          <span class="info-box-text text-dark">Converted</span>
+          <span class="info-box-number text-dark">
+            {{ converted_leads }}
+          </span>
+          <small class="text-muted">
+            {{ conversion_rate }}% Conversion Rate
+          </small>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-md-3">
+    <a href="{% url 'ViewLead' %}?status=lost" class="text-decoration-none">
+      <div class="info-box dashboard-card shadow-sm">
+        <span class="info-box-icon bg-danger text-white">
+          <i class="bi bi-x-circle-fill"></i>
+        </span>
+        <div class="info-box-content">
+          <span class="info-box-text text-dark">Lost Leads</span>
+          <span class="info-box-number text-dark">{{ lost_leads }}</span>
+        </div>
+      </div>
+    </a>
+  </div>
+
+</div>
+
+<!-- ===================== FOLLOWUP SECTION ===================== -->
+<div class="dashboard-section-title mt-4">Followups & Priority</div>
+
+<div class="row g-3">
+
+  <div class="col-md-3">
+    <a href="{% url 'ViewLead' %}?priority=high" class="text-decoration-none">
+      <div class="info-box dashboard-card shadow-sm">
+        <span class="info-box-icon bg-warning text-dark">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+        </span>
+        <div class="info-box-content">
+          <span class="info-box-text text-dark">High Priority</span>
+          <span class="info-box-number text-dark">{{ high_priority_leads }}</span>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <div class="col-md-3">
+    <div class="info-box dashboard-card shadow-sm">
+      <span class="info-box-icon bg-danger text-white">
+        <i class="bi bi-alarm-fill"></i>
+      </span>
+      <div class="info-box-content">
+        <span class="info-box-text text-dark">Overdue Followups</span>
+        <span class="info-box-number text-dark">{{ overdue_followups }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="info-box dashboard-card shadow-sm">
+      <span class="info-box-icon bg-secondary text-white">
+        <i class="bi bi-telephone-fill"></i>
+      </span>
+      <div class="info-box-content">
+        <span class="info-box-text text-dark">Today's Followups</span>
+        <span class="info-box-number text-dark">{{ today_followups }}</span>
+      </div>
+    </div>
+  </div>
+
+  {% if total_users %}
+  <div class="col-md-3">
+    <a href="{% url 'viewusers' %}" class="text-decoration-none">
+      <div class="info-box dashboard-card shadow-sm">
+        <span class="info-box-icon bg-primary text-white">
+          <i class="bi bi-people-fill"></i>
+        </span>
+        <div class="info-box-content">
+          <span class="info-box-text text-dark">Total Users</span>
+          <span class="info-box-number text-dark">{{ total_users }}</span>
+        </div>
+      </div>
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+
+
+<!-- ===================== REVENUE SECTION ===================== -->
+<div class="dashboard-section-title mt-4">Revenue Overview</div>
+
+<div class="row g-3">
+
+  <div class="col-md-3">
+    <div class="info-box dashboard-card shadow-sm">
+      <span class="info-box-icon bg-success text-white">
+        <i class="bi bi-cash-stack"></i>
+      </span>
+      <div class="info-box-content">
+        <span class="info-box-text text-dark">Total Revenue</span>
+        <span class="info-box-number text-success">
+          ${{ total_revenue|floatformat:2 }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="info-box dashboard-card shadow-sm">
+      <span class="info-box-icon bg-primary text-white">
+        <i class="bi bi-check-circle-fill"></i>
+      </span>
+      <div class="info-box-content">
+        <span class="info-box-text text-dark">Paid Revenue</span>
+        <span class="info-box-number text-primary">
+          ${{ paid_revenue|floatformat:2 }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="info-box dashboard-card shadow-sm">
+      <span class="info-box-icon bg-warning text-dark">
+        <i class="bi bi-hourglass-split"></i>
+      </span>
+      <div class="info-box-content">
+        <span class="info-box-text text-dark">Pending Revenue</span>
+        <span class="info-box-number text-warning">
+          ${{ pending_revenue|floatformat:2 }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="col-md-3">
+  <div class="info-box shadow-sm">
+    <span class="info-box-icon bg-dark text-white">
+      <i class="bi bi-currency-dollar"></i>
+    </span>
+    <div class="info-box-content">
+      <span class="info-box-text">Total Commission Paid</span>
+      <span class="info-box-number text-dark">
+        ${{ total_commission|floatformat:2 }}
+      </span>
+    </div>
+  </div>
+</div>
+        {% include 'graph.html'  %}
+
+</div>
+
+</div>
+</div>
+
+</main>

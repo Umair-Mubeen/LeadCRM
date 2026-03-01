@@ -1,0 +1,303 @@
+  <html>
+    {% load static %}
+   <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>LeadCRM | Create Lead</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#007bff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
+    <meta name="title" content="AdminLTE v4 | Dashboard" />
+    <meta name="author" content="ColorlibHQ" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <link rel="preload" href="{% static 'css/adminlte.css' %}" as="style" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
+      integrity="sha256-tXJfXfp6Ewt1ilPzLDtQnJV4hclT9XuaZUKyUvmyr+Q="
+      crossorigin="anonymous"
+      media="print"
+      onload="this.media='all'"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="{% static 'css/adminlte.css' %}" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.css"
+      integrity="sha256-4MX+61mt9NVvvuPjUWdUdyfZfxSB1/Rf9WtqRHgG5S0="
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/css/jsvectormap.min.css"
+      integrity="sha256-+uGLJmmTKOqBr+2E6KDYs/NRsHxSkONXFHUL0fy2O/4="
+      crossorigin="anonymous"
+    />
+  </head>
+    <body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">
+    
+    <div class="app-wrapper">
+        {% include 'navbar.html' %}
+        {% include 'sidebar.html' %}
+ <main class="app-main" id="main" tabindex="-1">
+      
+        <div class="app-content-header">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-sm-6"><h3 class="mb-0">LeadCRM</h3></div>
+              <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-end">
+                  <li class="breadcrumb-item"><a href="#" style="color:black">Home</a></li>
+                  <li class="breadcrumb-item" aria-current="page"><a href="{% url 'ViewLead' %}" style="color:black">Manage Leads </a></li>
+                                    <li class="breadcrumb-item active" aria-current="page">{% if lead %} Edit Lead {% else %} Create Lead {% endif %}</li>
+
+                </ol>
+              </div>
+            </div>
+        
+          </div>
+        
+        </div>
+        <div class="app-content">
+     
+          <div class="container-fluid">
+
+            <div class="card card-info card-outline mb-4">
+                  <div class="card-header"><div class="card-title">Lead Generation</div></div>
+<form class="needs-validation"
+      method="POST"
+      action="{% if lead %}{% url 'EditLead' lead.id %}{% else %}{% url 'AddLead' %}{% endif %}"
+      novalidate>
+
+{% csrf_token %}
+
+<div class="card-body">
+      <input type="hidden" name="next" class="form-control" value="{{next_url}}"/>
+
+<div class="row g-3">
+
+<!-- SOURCE -->
+<div class="col-md-6">
+<label class="form-label">Source *</label>
+<select class="form-select" name="source" required>
+<option value="">Select Source</option>
+
+{% for value,label in SOURCE_CHOICES %}
+<option value="{{ value }}"
+{% if lead and lead.source == value %}selected{% endif %}>
+{{ label }}
+</option>
+{% endfor %}
+
+</select>
+</div>
+
+<!-- REGION -->
+<div class="col-md-6">
+<label class="form-label">Region</label>
+<input type="text" class="form-control"
+       name="region"
+       value="{{ lead.region|default:'' }}">
+</div>
+
+<!-- STATUS -->
+<div class="col-md-6">
+<label class="form-label">Status *</label>
+
+<select class="form-select" name="status" required>
+
+{% for value,label in STATUS_CHOICES %}
+
+    {% if value != "won" or request.user.profile.is_admin %}
+        <option value="{{ value }}"
+        {% if lead and lead.status == value %}selected{% endif %}>
+            {{ label }}
+        </option>
+    {% endif %}
+
+{% endfor %}
+
+</select>
+</div>
+<!-- PRIORITY -->
+<div class="col-md-6">
+<label class="form-label">Priority *</label>
+<select class="form-select" name="priority" required>
+{% for value,label in PRIORITY_CHOICES %}
+<option value="{{ value }}"
+{% if lead and lead.priority == value %}selected{% endif %}>
+{{ label }}
+</option>
+{% endfor %}
+</select>
+</div>
+
+<!-- FIRST NAME -->
+<div class="col-md-6">
+<label class="form-label">First Name *</label>
+<input type="text"
+       class="form-control"
+       name="first_name"
+       value="{{ lead.first_name|default:'' }}"
+       required>
+</div>
+
+<!-- LAST NAME -->
+<div class="col-md-6">
+<label class="form-label">Last Name *</label>
+<input type="text"
+       class="form-control"
+       name="last_name"
+       value="{{ lead.last_name|default:'' }}"
+       required>
+</div>
+
+<!-- EMAIL -->
+<div class="col-md-6">
+<label class="form-label">Email *</label>
+<input type="email"
+       class="form-control"
+       name="email"
+       value="{{ lead.email|default:'' }}"
+       required>
+</div>
+
+<!-- MOBILE -->
+<div class="col-md-6">
+<label class="form-label">Mobile *</label>
+<input type="text"
+       class="form-control"
+       name="mobile_number"
+       value="{{ lead.mobile_number|default:'' }}"
+       required>
+</div>
+
+<!-- BUDGET -->
+<div class="col-md-6">
+<label class="form-label">Budget</label>
+<input type="number"
+       step="0.01"
+       class="form-control"
+       name="budget"
+       value="{{ lead.budget|default:'' }}">
+</div>
+
+<!-- DOMAIN -->
+<div class="col-md-6">
+<label class="form-label">Domain Name</label>
+<input type="text"
+       class="form-control"
+       name="domain_name"
+       value="{{ lead.domain_name|default:'' }}">
+</div>
+
+<!-- LEAD BRIEF -->
+<div class="col-md-6">
+<label class="form-label">Brief</label>
+<textarea class="form-control"
+          name="lead_brief"
+          rows="2">{{ lead.lead_brief|default:'' }}</textarea>
+</div>
+
+<!-- REQUIREMENTS -->
+<div class="col-md-6">
+<label class="form-label">Requirements</label>
+<textarea class="form-control"
+          name="requirements"
+          rows="2">{{ lead.requirements|default:'' }}</textarea>
+</div>
+
+<!-- SOCIAL -->
+<div class="col-md-6">
+<label class="form-label">Social Accounts</label>
+<input type="text"
+       class="form-control"
+       name="social_accounts"
+       value="{{ lead.social_accounts|default:'' }}">
+</div>
+
+<!-- ASSIGN USERS -->
+<div class="col-md-6">
+<label class="form-label">Assign To *</label>
+<select class="form-select"
+        name="userId"
+        multiple
+        required>
+
+{% for u in users %}
+<option value="{{ u.id }}"
+{% if lead and u in lead.assigned_to.all %}selected{% endif %}>
+{{ u.username }}
+</option>
+{% endfor %}
+
+</select>
+</div>
+
+</div>
+</div>
+
+<div class="card-footer text-end">
+<button class="btn btn-primary" type="submit">
+{% if lead %}Update Lead{% else %}Create Lead{% endif %}
+</button>
+</div>
+
+</form>
+                </div>
+          </div>
+     
+        </div>
+      </main>
+        {% include 'footer.html' %}
+        
+        
+    </div>
+
+    </body>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script src="{% static 'js/adminlte.js' %}"></script>
+
+     <script
+      src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"
+      crossorigin="anonymous"
+    ></script>
+
+     <script
+      src="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.min.js"
+      integrity="sha256-+vh8GkaU7C9/wbSLIcwq82tQ2wTf44aOHA8HlBMwRI8="
+      crossorigin="anonymous"
+    ></script>
+
+     <script
+      src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/js/jsvectormap.min.js"
+      integrity="sha256-/t1nN2956BT869E6H4V1dnt0X5pAQHPytli+1nTZm2Y="
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/maps/world.js"
+      integrity="sha256-XPpPaZlU8S/HWf7FZLAncLg2SAkP8ScUTII89x9D3lY="
+      crossorigin="anonymous"
+    ></script>
+    </html>

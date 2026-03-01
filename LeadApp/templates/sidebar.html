@@ -1,0 +1,76 @@
+{% load static %}
+<aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+        <div class="sidebar-brand">
+          <a href="#" class="brand-link">
+            <img src="{% static 'assets/img/AdminLTELogo.png'  %}" alt="AdminLTE Logo" class="brand-image opacity-75 shadow">
+            <span class="brand-text fw-light">                    {{user.username}}
+</span>
+          </a>
+        </div>
+        <div class="sidebar-wrapper" data-overlayscrollbars="host"><div class="os-size-observer"><div class="os-size-observer-listener"></div></div><div class="" data-overlayscrollbars-viewport="scrollbarHidden overflowXHidden overflowYScroll" tabindex="-1" style="margin-right: -16px; margin-bottom: -16px; margin-left: 0px; top: -8px; right: auto; left: -8px; width: calc(100% + 16px); padding: 8px;">
+          <nav class="mt-2">
+            <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="navigation" aria-label="Main navigation" data-accordion="false" id="navigation">
+              {% if user.is_superuser and user.profile.role != "LGS" %}
+              <li class="nav-item">
+                <a href="#" class="nav-link">
+                  <i class="nav-icon bi bi-speedometer"></i>
+                  <p>
+                    User
+                    <i class="nav-arrow bi bi-chevron-right"></i>
+                  </p>
+                </a>
+                <ul class="nav nav-treeview" role="navigation" aria-label="Navigation 4">
+                  <li class="nav-item">
+                    <a href="{% url 'AddEditUser' %}" class="nav-link">
+                      <i class="nav-icon bi bi-circle"></i>
+                      <p>Create User</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="{% url 'viewusers' %}" class="nav-link">
+                      <i class="nav-icon bi bi-circle"></i>
+                      <p>Manage Users</p>
+                    </a>
+                  </li>
+                  
+                </ul>
+              </li>
+              {% endif %}
+
+                    <li class="nav-item">
+                <a href="#" class="nav-link">
+                  <i class="nav-icon bi bi-speedometer"></i>
+                  <p>
+                    Lead
+                    <i class="nav-arrow bi bi-chevron-right"></i>
+                  </p>
+                </a>
+                <ul class="nav nav-treeview" role="navigation" aria-label="Navigation 4">
+                               {% if user.is_superuser %}
+                  <li class="nav-item">
+                    <a href="{% url 'AddLead' %}" class="nav-link">
+                      <i class="nav-icon bi bi-circle"></i>
+                      <p>Create Lead</p>
+                    </a>
+                  </li>
+                  {% endif %}
+                 
+                  <li class="nav-item">
+                    <a href="{% url 'ViewLead' %}" class="nav-link">
+                      <i class="nav-icon bi bi-circle"></i>
+                      <p>View Lead</p>
+                    </a>
+                  </li>
+<li class="nav-item">
+    <a href="{% url 'ViewLead' %}?status=won" class="nav-link">
+        <i class="nav-icon bi bi-circle"></i>
+        <p>Converted Lead</p>
+    </a>
+</li>
+                  
+                </ul>
+              </li>
+
+          </nav>
+        </div><div class="os-scrollbar os-scrollbar-horizontal os-theme-light os-scrollbar-auto-hide os-scrollbar-handle-interactive os-scrollbar-track-interactive os-scrollbar-cornerless os-scrollbar-unusable os-scrollbar-auto-hide-hidden" style="--os-viewport-percent: 1; --os-scroll-direction: 0;"><div class="os-scrollbar-track"><div class="os-scrollbar-handle"></div></div></div><div class="os-scrollbar os-scrollbar-vertical os-theme-light os-scrollbar-auto-hide os-scrollbar-handle-interactive os-scrollbar-track-interactive os-scrollbar-visible os-scrollbar-cornerless os-scrollbar-auto-hide-hidden" style="--os-viewport-percent: 0.4534; --os-scroll-direction: 0;"><div class="os-scrollbar-track"><div class="os-scrollbar-handle"></div></div></div></div>
+      </aside>

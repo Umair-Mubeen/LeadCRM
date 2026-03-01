@@ -1,0 +1,119 @@
+<div class="container-fluid mt-4">
+
+    <!-- KPI ROW -->
+    <div class="row g-4 mb-4">
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3">
+                <small class="text-muted">Total Revenue</small>
+                <h4 class="fw-bold">PKR {{ monthly_revenue.total_revenue|floatformat:0 }}</h4>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3">
+                <small class="text-muted">Growth</small>
+                <h4 class="fw-bold text-success">
+                    <i class="bi bi-arrow-up"></i>
+                    {{ monthly_revenue.growth }}%
+                </h4>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3">
+                <small class="text-muted">Avg Monthly</small>
+                <h4 class="fw-bold">
+                    PKR {{ monthly_revenue.avg_monthly|floatformat:0 }}
+                </h4>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3">
+                <small class="text-muted">Best Month</small>
+                <h4 class="fw-bold">
+                    {{ monthly_revenue.best_month }}
+                </h4>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- CHART CARD -->
+    <div class="card border-0 shadow-sm p-4">
+        <div class="d-flex justify-content-between mb-3">
+            <h5 class="fw-semibold">Revenue Overview</h5>
+        </div>
+
+        <div id="sales-chart" style="height: 350px;"></div>
+    </div>
+
+</div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    var thisYear = {{ monthly_revenue.this_year|safe }};
+    var lastYear = {{ monthly_revenue.last_year|safe }};
+
+    let cumulative = [];
+    thisYear.reduce((a, b, i) => cumulative[i] = a + b, 0);
+
+    var options = {
+        series: [
+            {
+                name: "This Year",
+                type: "column",
+                data: thisYear
+            },
+            {
+                name: "Last Year",
+                type: "column",
+                data: lastYear
+            },
+            {
+                name: "Trend",
+                type: "line",
+                data: cumulative
+            }
+        ],
+        chart: {
+            height: 350,
+            type: "line",
+            toolbar: { show: false }
+        },
+        stroke: {
+            width: [0, 0, 3],
+            curve: "smooth"
+        },
+        plotOptions: {
+            bar: {
+                columnWidth: "40%",
+                borderRadius: 8
+            }
+        },
+        colors: ["#3b82f6", "#e5e7eb", "#16a34a"],
+        xaxis: {
+            categories: {{ monthly_revenue.months|safe }},
+        },
+        tooltip: {
+            shared: true,
+            y: {
+                formatter: function (val) {
+                    return "PKR " + val.toLocaleString();
+                }
+            }
+        },
+        grid: {
+            borderColor: "#f3f4f6"
+        },
+        legend: {
+            position: "top"
+        }
+    };
+
+    new ApexCharts(document.querySelector("#sales-chart"), options).render();
+});
+</script>
