@@ -112,10 +112,7 @@
                     </td>
 
                     <td>
-                      {% if lead.latest_followup and
-                      lead.latest_followup.next_followup_date %} {{
-                      lead.latest_followup.next_followup_date }} {% else %} — {%
-                      endif %}
+                      {% if lead.latest_followup and lead.latest_followup.next_followup_date %} {{lead.latest_followup.next_followup_date }} {% else %} — {%endif %}
                     </td>
 
                     <td>{{ lead.get_source_display }}</td>
@@ -185,8 +182,7 @@
                               <p><strong>Name:</strong> {{ lead.full_name }}</p>
                               <p><strong>Email:</strong> {{ lead.email }}</p>
                               <p style="text-align: justify">
-                                <strong>Brief:</strong> {{
-                                lead.lead_brief|default:"—" }}
+                                <strong>Brief:</strong> {{lead.lead_brief|default:"—" }}
                               </p>
                             </div>
 
@@ -196,12 +192,10 @@
                                 Details
                               </h6>
                               <p>
-                                <strong>Status:</strong> {{
-                                lead.get_status_display }}
+                                <strong>Status:</strong> {{lead.get_status_display }}
                               </p>
                               <p>
-                                <strong>Budget:</strong> {{
-                                lead.budget|default:"—" }}
+                                <strong>Budget:</strong> {{lead.budget|default:"—" }}
                               </p>
                             </div>
                           </div>
@@ -219,7 +213,7 @@
 
                             {% if request.user.profile.is_admin %}
                             <div>
-                              {% if lead.deal %}
+                              {% if lead.deal%}
                               <a
                                 href="{% url 'CreateDeal' lead.id  %}?next={{ request.get_full_path|urlencode }}"
                                 class="btn btn-sm btn-outline-success"
@@ -283,17 +277,16 @@
                             </p>
 
                             <!-- Progress Bar -->
-                            {% with
-                            percentage=lead.deal.amount_paid|floatformat:2 %}
-                            <div class="progress mt-2" style="height: 20px">
-                              <div
-                                class="progress-bar bg-success"
-                                role="progressbar"
-                                style="width: {{ lead.deal.payment_percentage }}%"
-                              >
-                                {{ lead.deal.payment_percentage }}%
+                            {% with percentage=lead.deal.amount_paid|floatformat:2 %}
+                              <div class="progress mt-2" style="height: 20px">
+                                <div
+                                  class="progress-bar bg-success"
+                                  role="progressbar"
+                                  style="width:{{lead.deal.payment_percentage }}%"
+                                >
+                                  {{ lead.deal.payment_percentage }}
+                                </div>
                               </div>
-                            </div>
                             {% endwith %}
 
                             <!-- Closing Date -->
@@ -336,8 +329,7 @@
                               </thead>
 
                               <tbody>
-                                {% for installment in lead.deal.installments.all
-                                %}
+                                {% for installment in lead.deal.installments.all %}
                                 <tr>
                                   <td>{{ forloop.counter }}</td>
 
@@ -354,9 +346,7 @@
                                   <td>{{ installment.note|default:"—" }}</td>
 
                                   <td>
-                                    {{
-                                    installment.created_by.username|default:"System"
-                                    }}
+                                    {{installment.created_by.username|default:"System" }}
                                   </td>
 
                                   {% if request.user.profile.is_admin %}
@@ -412,8 +402,7 @@
                           <div class="border rounded p-2 mb-2 bg-white">
                             <strong>{{ f.created_by.username }}</strong>
                             <small class="text-muted">
-                              ({{ f.created_by.profile.get_role_display }}) - {{
-                              f.created_at|date:"d M Y H:i" }}
+                              ({{ f.created_by.profile.get_role_display }}) - {{f.created_at|date:"d M Y H:i" }}
                             </small>
                             <p>{{ f.note }}</p>
                           </div>
@@ -435,9 +424,7 @@
                               →
                               <strong>{{ s.new_status|capfirst }}</strong>
                               <br />
-                              By {{ s.changed_by.username }} ({{
-                              s.changed_by.profile.get_role_display }}) on {{
-                              s.changed_at|date:"d M Y H:i" }}
+                              By {{ s.changed_by.username }} ({{s.changed_by.profile.get_role_display }}) on {{s.changed_at|date:"d M Y H:i" }}
                             </small>
                           </div>
                           {% empty %}
