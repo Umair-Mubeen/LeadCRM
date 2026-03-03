@@ -23,6 +23,10 @@ path('AddEditUser/', views.AddEditUser, name='AddEditUser'),
 path("deal/create/<int:lead_id>/", views.CreateDeal, name="CreateDeal"),
 path("deal/<int:deal_id>/installment/", views.AddInstallment, name="AddInstallment"),
 path("installment/delete/<int:installment_id>/",views.DeleteInstallment,name="DeleteInstallment"),
+path("installment/<int:installment_id>/edit/",views.EditInstallment,name="EditInstallment"),
+
+path("commission-ledger/", views.CommissionLedger, name="commission_ledger"),
+path("commission-paid/<int:pk>/", views.mark_commission_paid, name="mark_commission_paid"),
 
 
 ]

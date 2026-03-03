@@ -1,119 +1,196 @@
 <div class="container-fluid mt-4">
+  <form method="get" class="mb-3">
+    <div class="row">
+      <div class="col-md-3">
+        <select name="month" class="form-select" onchange="this.form.submit()">
+          <option value="">Current Month</option>
 
-    <!-- KPI ROW -->
-    <div class="row g-4 mb-4">
+          {% for m, name in months_list %}
 
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm p-3">
-                <small class="text-muted">Total Revenue</small>
-                <h4 class="fw-bold">PKR {{ monthly_revenue.total_revenue|floatformat:0 }}</h4>
-            </div>
+          <option
+            value="{{ m }}"
+            {%
+            if
+            selected_month=""
+            ="m"
+            %}selected{%
+            endif
+            %}
+          >
+            {{ name }}
+          </option>
+
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </form>
+  <div class="row g-4 mb-4">
+    <!-- TODAY -->
+    <div class="col-md-3">
+      <div
+        class="card border-0 shadow-sm text-white"
+        style="background: linear-gradient(45deg, #16a34a, #22c55e)"
+      >
+        <div class="card-body">
+          <small>Today</small>
+          <h3 class="fw-bold mb-0">PKR {{ rev.today|floatformat:0 }}</h3>
         </div>
-
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm p-3">
-                <small class="text-muted">Growth</small>
-                <h4 class="fw-bold text-success">
-                    <i class="bi bi-arrow-up"></i>
-                    {{ monthly_revenue.growth }}%
-                </h4>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm p-3">
-                <small class="text-muted">Avg Monthly</small>
-                <h4 class="fw-bold">
-                    PKR {{ monthly_revenue.avg_monthly|floatformat:0 }}
-                </h4>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm p-3">
-                <small class="text-muted">Best Month</small>
-                <h4 class="fw-bold">
-                    {{ monthly_revenue.best_month }}
-                </h4>
-            </div>
-        </div>
-
+      </div>
     </div>
 
-    <!-- CHART CARD -->
-    <div class="card border-0 shadow-sm p-4">
-        <div class="d-flex justify-content-between mb-3">
-            <h5 class="fw-semibold">Revenue Overview</h5>
+    <!-- YESTERDAY -->
+    <div class="col-md-3">
+      <div
+        class="card border-0 shadow-sm text-white"
+        style="background: linear-gradient(45deg, #2563eb, #3b82f6)"
+      >
+        <div class="card-body">
+          <small>Yesterday</small>
+          <h3 class="fw-bold mb-0">PKR {{ rev.yesterday|floatformat:0 }}</h3>
         </div>
-
-        <div id="sales-chart" style="height: 350px;"></div>
+      </div>
     </div>
 
+    <!-- MONTH -->
+    <div class="col-md-3">
+      <div
+        class="card border-0 shadow-sm text-white"
+        style="background: linear-gradient(45deg, #f59e0b, #fbbf24)"
+      >
+        <div class="card-body">
+          <small>This Month</small>
+          <h3 class="fw-bold mb-0">PKR {{ rev.this_month|floatformat:0 }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- YEAR -->
+    <div class="col-md-3">
+      <div
+        class="card border-0 shadow-sm text-white"
+        style="background: linear-gradient(45deg, #7c3aed, #a78bfa)"
+      >
+        <div class="card-body">
+          <small>This Year</small>
+          <h3 class="fw-bold mb-0">PKR {{ rev.this_year|floatformat:0 }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAILY CHART -->
+  <div class="card border-0 shadow-sm p-4 mb-4">
+    <div class="d-flex justify-content-between mb-3">
+      <h5 class="fw-semibold">Monthly Daily Revenue</h5>
+    </div>
+
+    <div id="daily-chart" style="height: 320px"></div>
+  </div>
+
+  <!-- MONTHLY CHART -->
+  <div class="card border-0 shadow-sm p-4">
+    <div class="d-flex justify-content-between mb-3">
+      <h5 class="fw-semibold">Monthly Revenue</h5>
+    </div>
+
+    <div id="monthly-chart" style="height: 320px"></div>
+  </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
 
-    var thisYear = {{ monthly_revenue.this_year|safe }};
-    var lastYear = {{ monthly_revenue.last_year|safe }};
+  let days = {{ rev.days|safe }};
+  let daily = {{ rev.daily|safe }};
 
-    let cumulative = [];
-    thisYear.reduce((a, b, i) => cumulative[i] = a + b, 0);
+  let months = {{ rev.months|safe }};
+  let monthly = {{ rev.monthly|safe }};
 
-    var options = {
-        series: [
-            {
-                name: "This Year",
-                type: "column",
-                data: thisYear
-            },
-            {
-                name: "Last Year",
-                type: "column",
-                data: lastYear
-            },
-            {
-                name: "Trend",
-                type: "line",
-                data: cumulative
-            }
-        ],
-        chart: {
-            height: 350,
-            type: "line",
-            toolbar: { show: false }
-        },
-        stroke: {
-            width: [0, 0, 3],
-            curve: "smooth"
-        },
-        plotOptions: {
-            bar: {
-                columnWidth: "40%",
-                borderRadius: 8
-            }
-        },
-        colors: ["#3b82f6", "#e5e7eb", "#16a34a"],
-        xaxis: {
-            categories: {{ monthly_revenue.months|safe }},
-        },
-        tooltip: {
-            shared: true,
-            y: {
-                formatter: function (val) {
-                    return "PKR " + val.toLocaleString();
-                }
-            }
-        },
-        grid: {
-            borderColor: "#f3f4f6"
-        },
-        legend: {
-            position: "top"
-        }
-    };
 
-    new ApexCharts(document.querySelector("#sales-chart"), options).render();
-});
+
+  // DAILY CHART
+
+  new ApexCharts(
+  document.querySelector("#daily-chart"),
+  {
+  chart:{
+  type:"line",
+  height:320,
+  toolbar:{show:false}
+  },
+
+  series:[
+  {
+  name:"Daily Revenue",
+  data:daily
+  }
+  ],
+
+  stroke:{
+  curve:"smooth",
+  width:3
+  },
+
+  colors:["#16a34a"],
+
+  xaxis:{
+  categories:days
+  },
+
+  tooltip:{
+  y:{
+  formatter:function(val){
+  return "PKR " + val.toLocaleString();
+  }
+  }
+  }
+
+  }
+  ).render();
+
+
+
+  // MONTHLY CHART
+
+  new ApexCharts(
+  document.querySelector("#monthly-chart"),
+  {
+  chart:{
+  type:"bar",
+  height:320,
+  toolbar:{show:false}
+  },
+
+  series:[
+  {
+  name:"Monthly Revenue",
+  data:monthly
+  }
+  ],
+
+  colors:["#2563eb"],
+
+  plotOptions:{
+  bar:{
+  borderRadius:6,
+  columnWidth:"45%"
+  }
+  },
+
+  xaxis:{
+  categories:months
+  },
+
+  tooltip:{
+  y:{
+  formatter:function(val){
+  return "PKR " + val.toLocaleString();
+  }
+  }
+  }
+
+  }
+  ).render();
 </script>

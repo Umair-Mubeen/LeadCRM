@@ -1,0 +1,86 @@
+<div class="container mt-4">
+
+<h4 class="mb-3">Commission Ledger</h4>
+
+<div class="card shadow-sm">
+<div class="card-body p-0">
+
+<table class="table table-bordered align-middle mb-0">
+<thead class="table-light">
+<tr>
+<th>Date</th>
+<th>Salesman</th>
+<th>Deal</th>
+<th>Installment</th>
+<th>%</th>
+<th>Commission</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for c in commissions %}
+
+<tr>
+<td>{{ c.installment.payment_date }}</td>
+<td>{{ c.user.username }}</td>
+<td>{{ c.installment.deal }}</td>
+<td>PKR {{ c.installment.amount }}</td>
+<td>{{ c.percentage }}%</td>
+<td><strong>PKR {{ c.amount }}</strong></td>
+
+<td>
+{% if c.is_paid %}
+<span class="badge bg-success">Paid</span>
+{% else %}
+<span class="badge bg-warning text-dark">Unpaid</span>
+{% endif %}
+</td>
+
+<td>
+{% if not c.is_paid %}
+<a href="{% url 'mark_commission_paid' c.id %}"
+   class="btn btn-sm btn-success">
+   Mark Paid
+</a>
+{% endif %}
+</td>
+
+</tr>
+
+{% empty %}
+<tr>
+<td colspan="8" class="text-center text-muted">
+No commission records found.
+</td>
+</tr>
+{% endfor %}
+
+</tbody>
+
+<tfoot class="table-light">
+<tr>
+<th colspan="5">Total</th>
+<th>PKR {{ total_commission }}</th>
+<th colspan="2"></th>
+</tr>
+<tr>
+<th colspan="5">Paid</th>
+<th class="text-success">PKR {{ total_paid }}</th>
+<th colspan="2"></th>
+</tr>
+<tr>
+<th colspan="5">Unpaid</th>
+<th class="text-danger">PKR {{ total_unpaid }}</th>
+<th colspan="2"></th>
+</tr>
+</tfoot>
+
+</table>
+
+</div>
+</div>
+
+</div>

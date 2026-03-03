@@ -1,13 +1,23 @@
-
-  <html>
-    {% load static %}
-   <head>
+<html>
+  {% load static %}
+  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>LeadCRM | Lead FollowUp </title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <title>LeadCRM | Lead FollowUp</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=yes"
+    />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#007bff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
+    <meta
+      name="theme-color"
+      content="#007bff"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#1a1a1a"
+      media="(prefers-color-scheme: dark)"
+    />
     <meta name="title" content="AdminLTE v4 | Dashboard" />
     <meta name="author" content="ColorlibHQ" />
     <meta name="supported-color-schemes" content="light dark" />
@@ -18,7 +28,7 @@
       integrity="sha256-tXJfXfp6Ewt1ilPzLDtQnJV4hclT9XuaZUKyUvmyr+Q="
       crossorigin="anonymous"
       media="print"
-      onload="this.media='all'"
+      onload="this.media = 'all'"
     />
     <link
       rel="stylesheet"
@@ -44,123 +54,138 @@
       crossorigin="anonymous"
     />
   </head>
-    <body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">
-    
+  <body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">
     <div class="app-wrapper">
-        {% include 'navbar.html' %}
-        {% include 'sidebar.html' %}
- <main class="app-main" id="main" tabindex="-1">
-      
+      {% include 'navbar.html' %} {% include 'sidebar.html' %}
+      <main class="app-main" id="main" tabindex="-1">
         <div class="app-content-header">
           <div class="container-fluid">
             <div class="row">
-              <div class="col-sm-6"><h3 class="mb-0">LeadCRM | Lead FollowUp</h3></div>
+              <div class="col-sm-6">
+                <h3 class="mb-0">LeadCRM | Lead FollowUp</h3>
+              </div>
               <div class="col-sm-6">
                 <ol class="breadcrumb float-sm-end">
-                  <li class="breadcrumb-item"><a href="#" style="color:black">Home</a></li>
-                  <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+                  <li class="breadcrumb-item">
+                    <a href="#" style="color: black">Home</a>
+                  </li>
+                  <li class="breadcrumb-item active" aria-current="page">
+                    Dashboard
+                  </li>
                 </ol>
               </div>
             </div>
-        
           </div>
-        
         </div>
         <div class="app-content">
-     
           <div class="container-fluid">
-
             <div class="card card-info card-outline mb-4">
-                  <div class="card-header"><div class="card-title">Lead Generation</div></div>
-<form method="POST">
-    {% csrf_token %}
-    <div class="card-body">
-            <input type="hidden" name="next" class="form-control" value="{{next_url}}"/>
+              <div class="card-header">
+                <div class="card-title">Lead Generation</div>
+              </div>
+              <form method="POST">
+                {% csrf_token %}
+                <div class="card-body">
+                  <input
+                    type="hidden"
+                    name="next"
+                    class="form-control"
+                    value="{{next_url}}"
+                  />
 
+                  <!-- Followup Note -->
+                  <div class="mb-3">
+                    <label class="form-label">Follow-up Note</label>
+                    <textarea
+                      class="form-control"
+                      name="note"
+                      rows="4"
+                      placeholder="Enter follow-up details..."
+                    >
+{% if followup %}{{ followup.note }}{% endif %}</textarea
+                    >
+                  </div>
 
-    <!-- Followup Note -->
-    <div class="mb-3">
-        <label class="form-label">Follow-up Note</label>
-        <textarea class="form-control"
-                  name="note"
-                  rows="4"
-                  placeholder="Enter follow-up details...">{% if followup %}{{ followup.note }}{% endif %}</textarea>
-    </div>
+                  <!-- Next Follow-up Date -->
+                  <div class="mb-3">
+                    <label class="form-label">Next Follow-up Date</label>
+                    <input
+                      type="date"
+                      class="form-control"
+                      name="next_followup_date"
+                      value="{% if followup %}{{ followup.next_followup_date|date:'Y-m-d' }}{% endif %}"
+                    />
+                  </div>
 
-    <!-- Next Follow-up Date -->
-    <div class="mb-3">
-        <label class="form-label">Next Follow-up Date</label>
-        <input type="date"
-               class="form-control"
-               name="next_followup_date"
-               value="{% if followup %}{{ followup.next_followup_date|date:'Y-m-d' }}{% endif %}">
-    </div>
-
-    <!-- Mark as Completed -->
-    <div class="form-check mb-3">
-        <input class="form-check-input"
-               type="checkbox"
-               name="is_completed"
-               id="is_completed"
-               {% if followup and followup.is_completed %}checked{% endif %}>
-        <label class="form-check-label" for="is_completed">
-            Mark Lead as Completed
-        </label>
-    </div>
-
-</div>
-
-    <div class="card-footer">
-        <button type="submit" class="btn btn-primary">
-            Add Follow-up
-        </button>
-    </div>
-</form>
+                  <!-- Mark as Completed -->
+                  <div class="form-check mb-3">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      name="is_completed"
+                      id="is_completed"
+                      {%
+                      if
+                      followup
+                      and
+                      followup.is_completed
+                      %}checked{%
+                      endif
+                      %}
+                    />
+                    <label class="form-check-label" for="is_completed">
+                      Mark Lead as Completed
+                    </label>
+                  </div>
                 </div>
+
+                <div class="card-footer">
+                  <button type="submit" class="btn btn-primary">
+                    Add Follow-up
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-     
         </div>
       </main>
-        {% include 'footer.html' %}
-        
-        
+      {% include 'footer.html' %}
     </div>
+  </body>
 
-    </body>
+  <script
+    src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js"
+    crossorigin="anonymous"
+  ></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+    crossorigin="anonymous"
+  ></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"
+    crossorigin="anonymous"
+  ></script>
+  <script src="{% static 'js/adminlte.js' %}"></script>
 
-    <script
-      src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js"
-      crossorigin="anonymous"
-    ></script>
-    <script
-      src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
-      crossorigin="anonymous"
-    ></script>
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"
-      crossorigin="anonymous"
-    ></script>
-    <script src="{% static 'js/adminlte.js' %}"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"
+    crossorigin="anonymous"
+  ></script>
 
-     <script
-      src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"
-      crossorigin="anonymous"
-    ></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.min.js"
+    integrity="sha256-+vh8GkaU7C9/wbSLIcwq82tQ2wTf44aOHA8HlBMwRI8="
+    crossorigin="anonymous"
+  ></script>
 
-     <script
-      src="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.min.js"
-      integrity="sha256-+vh8GkaU7C9/wbSLIcwq82tQ2wTf44aOHA8HlBMwRI8="
-      crossorigin="anonymous"
-    ></script>
-
-     <script
-      src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/js/jsvectormap.min.js"
-      integrity="sha256-/t1nN2956BT869E6H4V1dnt0X5pAQHPytli+1nTZm2Y="
-      crossorigin="anonymous"
-    ></script>
-    <script
-      src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/maps/world.js"
-      integrity="sha256-XPpPaZlU8S/HWf7FZLAncLg2SAkP8ScUTII89x9D3lY="
-      crossorigin="anonymous"
-    ></script>
-    </html>
+  <script
+    src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/js/jsvectormap.min.js"
+    integrity="sha256-/t1nN2956BT869E6H4V1dnt0X5pAQHPytli+1nTZm2Y="
+    crossorigin="anonymous"
+  ></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/maps/world.js"
+    integrity="sha256-XPpPaZlU8S/HWf7FZLAncLg2SAkP8ScUTII89x9D3lY="
+    crossorigin="anonymous"
+  ></script>
+</html>

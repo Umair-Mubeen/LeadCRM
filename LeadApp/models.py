@@ -4,8 +4,30 @@ from django.utils import timezone
 from decimal import Decimal
 from django.conf import settings
 
+from django.db import models
 
-class UserProfile(models.Model):
+
+class ActiveManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
+class SoftDeleteModel(models.Model):
+
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    objects = ActiveManager()
+    all_objects = models.Manager()
+
+    class Meta:
+        abstract = True
+
+    def soft_delete(self):
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.save()
+
+class UserProfile(SoftDeleteModel):
 
     ROLE_ADMIN = 'ADMIN'
     ROLE_SALESMAN = 'SALESMAN'
@@ -29,39 +51,38 @@ class UserProfile(models.Model):
         default=ROLE_SALESMAN,
         db_index=True
     )
-    
-   
+
     commission_percentage = models.DecimalField(
         max_digits=5,
         decimal_places=2,
-        default=0.00
+        default=Decimal("0.00")
     )
-
 
     commission_threshold = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=500.00
+        default=Decimal("500.00")
     )
 
     def save(self, *args, **kwargs):
 
-        # Auto set default commission based on role
-        if self.role == self.ROLE_LGS:
-            self.commission_percentage = Decimal("1.00")
+        # 🔥 Set default only if not already defined
+        if not self.pk:  # Only on create
 
-        elif self.role == self.ROLE_SALESMAN:
-            self.commission_percentage = Decimal("5.00")
+            if self.role == self.ROLE_LGS:
+                self.commission_percentage = Decimal("1.00")
+
+            elif self.role == self.ROLE_SALESMAN:
+                self.commission_percentage = Decimal("5.00")
 
         super().save(*args, **kwargs)
-    
+
     class Meta:
         verbose_name = "User Profile"
         verbose_name_plural = "User Profiles"
 
     def __str__(self):
         return f"{self.user.username} ({self.get_role_display()})"
-
 
     @property
     def is_admin(self):
@@ -74,9 +95,9 @@ class UserProfile(models.Model):
     @property
     def is_lgs(self):
         return self.role == self.ROLE_LGS
+    
 
-
-class Lead(models.Model):
+class Lead(SoftDeleteModel):
 
     SOURCE_CHOICES = [
         ('bark', 'Bark'),
@@ -218,7 +239,7 @@ class Lead(models.Model):
         }
         return mapping.get(self.status, "secondary")
 
-class LeadFollowUp(models.Model):
+class LeadFollowUp(SoftDeleteModel):
 
     lead = models.ForeignKey(
         Lead,
@@ -274,7 +295,7 @@ class LeadFollowUp(models.Model):
 
 
 
-class LeadStatusHistory(models.Model):
+class LeadStatusHistory(SoftDeleteModel):
 
     lead = models.ForeignKey(
         Lead,
@@ -305,7 +326,7 @@ class LeadStatusHistory(models.Model):
     
 
 
-class Deal(models.Model):
+class Deal(SoftDeleteModel):
 
     lead = models.OneToOneField(
         "Lead",
@@ -422,37 +443,11 @@ class Deal(models.Model):
 
         self.save()
 
-class Commission(models.Model):
 
-    deal = models.OneToOneField(
-        Deal,
-        on_delete=models.CASCADE,
-        related_name="commission"
-    )
 
-    salesman = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="commissions"
-    )
-
-    commission_percentage = models.DecimalField(
-        max_digits=5,
-        decimal_places=2
-    )
-
-    commission_amount = models.DecimalField(
-        max_digits=12,
-        decimal_places=2
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.salesman.username} - ${self.commission_amount}"
     
 
-class DealInstallment(models.Model):
+class DealInstallment(SoftDeleteModel):
 
     deal = models.ForeignKey(
         "Deal",
@@ -492,3 +487,47 @@ class DealInstallment(models.Model):
 
     def __str__(self):
         return f"{self.deal.lead.full_name} - ${self.amount}"
+
+
+class Commission(SoftDeleteModel):
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="commissions"
+    )
+
+    installment = models.ForeignKey(
+        DealInstallment,
+        on_delete=models.CASCADE,
+        related_name="commissions",
+        null=True,
+        blank=True,
+    )
+
+    percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2
+    )
+
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2
+    )
+
+    is_paid = models.BooleanField(default=False)
+
+    paid_at = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "installment")  # 🚀 prevents duplicates
+
+    def mark_as_paid(self):
+        self.is_paid = True
+        self.paid_at = timezone.now()
+        self.save()
+
+    def __str__(self):
+        return f"{self.user.username} - {self.amount}"

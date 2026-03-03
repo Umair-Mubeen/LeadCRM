@@ -11,13 +11,15 @@ from django.db.models import Count, Sum
 from django.db.models import Prefetch
 from django.db.models.functions import TruncMonth
 from decimal import Decimal
-from .graph import RevenueGraph
+from .graph import RevenueDashboard
 
 from django.db import transaction
 from django.contrib import messages
+from django.urls import reverse
 
 from .models import UserProfile, Lead, LeadFollowUp, LeadStatusHistory, Deal, Commission, DealInstallment
 
+import json
 def role_required(allowed_roles):
     def decorator(view_func):
         @wraps(view_func)
@@ -60,15 +62,12 @@ def dashboard(request):
 
     user = request.user
     today = timezone.now().date()
-    monthly_revenue = RevenueGraph()
-    print(monthly_revenue)
     
-
+    month = request.GET.get("month")
+    rev = RevenueDashboard(month)
     if user.profile.is_admin or user.profile.is_lgs:
         leads = Lead.objects.filter(is_deleted=False)
-        followups = LeadFollowUp.objects.filter(
-            lead__is_deleted=False
-        )
+        followups = LeadFollowUp.objects.filter(lead__is_deleted=False)
         total_users = User.objects.count() if user.profile.is_admin else None
 
     else:
@@ -79,17 +78,11 @@ def dashboard(request):
 
     
     total_leads = leads.count()
-
     today_leads = leads.filter(date_added__date=today).count()
-
     converted_leads = leads.filter(status="won").count()
-
     lost_leads = leads.filter(status="lost").count()
-
     high_priority_leads = leads.filter(priority="high").exclude(status="won").count()
-
     overdue_followups = followups.filter(next_followup_date__lt=today,is_completed=False).count()
-
     today_followups = followups.filter(next_followup_date=today,is_completed=False).count()
 
     conversion_rate = 0
@@ -99,26 +92,58 @@ def dashboard(request):
     deals = Deal.objects.all()
 
    
-    total_revenue = deals.aggregate(total=Sum("deal_value"))["total"] or 0
+    installments = DealInstallment.objects.filter(is_deleted=False)
 
-    
-    paid_revenue = deals.filter(payment_status="paid").aggregate(total=Sum("deal_value"))["total"] or 0
+    total_revenue = installments.aggregate(total=Sum("amount"))["total"] or 0
 
-    
-    pending_revenue = deals.filter(payment_status="pending").aggregate(total=Sum("deal_value"))["total"] or 0
+    # Paid revenue = actual received money
+    paid_revenue = total_revenue
 
-    
-    monthly_data = deals.annotate(month=TruncMonth("closing_date")).values("month").annotate(total=Sum("deal_value")).order_by("month")
+    # Pending revenue = remaining from deals
+    pending_revenue = Deal.objects.filter(is_deleted=False).aggregate(total=Sum("deal_value"))["total"] or 0
 
+    pending_revenue  = DealInstallment.objects.filter(is_deleted=False)
+
+    total_revenue = installments.aggregate(total=Sum("amount"))["total"] or 0
+
+    # Paid revenue = actual received money
+    paid_revenue = total_revenue
+
+    # Pending revenue = remaining from deals
+    pending_revenue = Deal.objects.filter(is_deleted=False).aggregate(total=Sum("deal_value"))["total"] or 0
+
+    pending_revenue = pending_revenue - total_revenue
     months = []
     revenues = []
+    monthly_data = (
+    DealInstallment.objects
+    .filter(is_deleted=False)
+    .annotate(month=TruncMonth("payment_date"))
+    .values("month")
+    .annotate(total=Sum("amount"))
+    .order_by("month")
+    )
 
     for item in monthly_data:
         months.append(item["month"].strftime("%b %Y"))
         revenues.append(float(item["total"]))
 
-    total_commission = Commission.objects.aggregate(total=Sum("commission_amount"))["total"] or 0
+    total_commission = Commission.objects.aggregate(total=Sum("amount"))["total"] or 0
     salesman_stats = deals.values("lead__assigned_to__username").annotate(total_revenue=Sum("deal_value"),total_deals=Count("id")).order_by("-total_revenue")
+    months_list = [
+    (1, "Jan"),
+    (2, "Feb"),
+    (3, "Mar"),
+    (4, "Apr"),
+    (5, "May"),
+    (6, "Jun"),
+    (7, "Jul"),
+    (8, "Aug"),
+    (9, "Sep"),
+    (10, "Oct"),
+    (11, "Nov"),
+    (12, "Dec"),
+]
 
     context = {
         "total_leads": total_leads,
@@ -135,10 +160,13 @@ def dashboard(request):
         "pending_revenue" : pending_revenue,
         "salesman_stats" : salesman_stats,
         "total_commission": total_commission,
-         "monthly_revenue": monthly_revenue
+          "rev": rev,
+                "months_list": months_list,
+        "selected_month": int(month) if month else None,
      
         
     }
+
 
     return render(request, "index.html", context)
 
@@ -170,12 +198,6 @@ def ViewLead(request):
 
     return render(request, "view_lead.html", {"leads": leads})
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.db import transaction
-from django.urls import reverse
-from django.contrib.auth.decorators import login_required
-
 @login_required
 @role_required([UserProfile.ROLE_ADMIN, UserProfile.ROLE_LGS])
 @transaction.atomic
@@ -184,30 +206,17 @@ def AddEditLead(request, leadId=None):
     lead = None
     next_url = request.GET.get("next") or request.POST.get("next")
 
-    # =========================
-    # EDIT EXISTING LEAD
-    # =========================
+ 
     if leadId:
-        lead = get_object_or_404(
-            Lead,
-            id=leadId,
-            is_deleted=False
-        )
+        lead = get_object_or_404(Lead, id=leadId, is_deleted=False)
 
-    # Salesman Users Only
-    sales_users = User.objects.select_related("profile").filter(
-        profile__role=UserProfile.ROLE_SALESMAN
-    )
+    sales_users = User.objects.select_related("profile").filter( profile__role=UserProfile.ROLE_SALESMAN)
 
     if request.method == "POST":
 
         assigned_ids = request.POST.getlist("userId")
 
-        # 🔒 Validate assigned users (Security)
-        valid_users = User.objects.filter(
-            id__in=assigned_ids,
-            profile__role=UserProfile.ROLE_SALESMAN
-        )
+        valid_users = User.objects.filter(id__in=assigned_ids,profile__role=UserProfile.ROLE_SALESMAN)
 
         form_data = {
             "first_name": request.POST.get("first_name"),
@@ -226,9 +235,8 @@ def AddEditLead(request, leadId=None):
             "priority": request.POST.get("priority"),
         }
 
-        # =========================
+      
         # UPDATE LEAD
-        # =========================
         if lead:
 
             old_status = lead.status
@@ -238,7 +246,7 @@ def AddEditLead(request, leadId=None):
 
             lead.save()
 
-            # Track Status Change
+            # Status history
             if old_status != lead.status:
                 LeadStatusHistory.objects.create(
                     lead=lead,
@@ -249,52 +257,43 @@ def AddEditLead(request, leadId=None):
 
             messages.success(request, "Lead updated successfully.")
 
-        # =========================
-        # CREATE NEW LEAD
-        # =========================
+ 
+        # CREATE LEAD
+   
         else:
-
-            lead = Lead.objects.create(
-                **form_data,
-                lead_created_by=request.user
-            )
+            lead = Lead.objects.create(**form_data,lead_created_by=request.user )
 
             messages.success(request, "Lead created successfully.")
 
-        # Update ManyToMany
+        # ManyToMany update
         lead.assigned_to.set(valid_users)
 
-        # =========================
-        # SMART REDIRECT LOGIC
-        # =========================
-
+        
+        # SAFE REDIRECT LOGIC
         collapse_hash = f"#collapse{lead.id}"
+        viewlead_url = reverse("ViewLead")
 
-        # If Converted → Go To Converted Tab
+        # Converted → go to converted tab
         if lead.status == "won":
+            return redirect( f"{viewlead_url}?status=won{collapse_hash}")
+
+        if next_url and next_url != "None":
             return redirect(
-                f"{reverse('ViewLead')}?status=won{collapse_hash}"
+                f"{next_url}{collapse_hash}"
             )
 
-        # Preserve previous filter page
-        if next_url:
-            return redirect(f"{next_url}{collapse_hash}")
-
         # Default fallback
-        return redirect(f"{reverse('ViewLead')}{collapse_hash}")
+        return redirect( f"{viewlead_url}{collapse_hash}" )
 
-    # =========================
-    # RENDER FORM
-    # =========================
+
     return render(request, "createLead.html", {
         "lead": lead,
         "users": sales_users,
         "STATUS_CHOICES": Lead.STATUS_CHOICES,
         "PRIORITY_CHOICES": Lead.PRIORITY_CHOICES,
         "SOURCE_CHOICES": Lead.SOURCE_CHOICES,
-        "next_url": next_url
+        "next_url": next_url,
     })
-
 
 @login_required
 def AddEditFollowup(request, lead_id, followup_id=None):
@@ -478,6 +477,7 @@ def UpdateDeal(request, deal_id):
 def AddInstallment(request, deal_id):
 
     deal = get_object_or_404(Deal, id=deal_id)
+    print('deal :', deal)
 
     if not request.user.profile.is_admin:
         return redirect("dashboard")
@@ -489,6 +489,10 @@ def AddInstallment(request, deal_id):
         amount = Decimal(request.POST.get("amount") or 0)
         note = request.POST.get("note")
         payment_date = request.POST.get("payment_date")
+        print("amount : ", amount)
+        print("note : ", note)
+        print("payment_date : ", payment_date)
+
 
         DealInstallment.objects.create(
             deal=deal,
@@ -521,8 +525,123 @@ def DeleteInstallment(request, installment_id):
         return redirect("dashboard")
 
     deal = installment.deal
-    installment.delete()
+    installment.soft_delete()
 
     deal.update_payment_status()
 
     return redirect("ViewLead")
+
+from django.db import transaction
+
+@transaction.atomic
+def EditInstallment(request, installment_id):
+
+    installment = get_object_or_404(
+        DealInstallment,
+        id=installment_id,
+        is_deleted=False
+    )
+
+    if not request.user.profile.is_admin:
+        return redirect("dashboard")
+
+    next_url = request.GET.get("next") or request.POST.get("next")
+
+    if request.method == "POST":
+
+        new_amount = Decimal(request.POST.get("amount") or 0)
+
+        # 🔒 Prevent editing if commission already paid
+        if installment.commissions.filter(is_paid=True).exists():
+            messages.error(
+                request,
+                "Cannot edit installment. Commission already paid."
+            )
+            return redirect("ViewLead")
+
+        installment.amount = new_amount
+        installment.note = request.POST.get("note")
+        installment.payment_date = request.POST.get("payment_date")
+        installment.save()
+
+        # 🔥 Recalculate commissions safely
+        for commission in installment.commissions.filter(is_deleted=False):
+
+            commission.amount = (
+                new_amount * commission.percentage
+            ) / Decimal("100")
+
+            commission.save()
+
+        # Update deal payment status
+        installment.deal.update_payment_status()
+
+        if next_url:
+            url = f"#collapse{installment.deal.lead.id}"
+            return redirect(next_url + url)
+
+        return redirect("ViewLead")
+
+    return render(request, "InstallmentPlan.html", {
+        "installment": installment,
+        "deal": installment.deal,
+        "next": next_url
+    })
+
+
+def CommissionLedger(request):
+
+    user_id = request.GET.get("user")
+    month = request.GET.get("month")
+
+    commissions = Commission.objects.select_related(
+        "user",
+        "installment",
+        "installment__deal"
+    )
+
+    # Filter by user
+    if user_id:
+        commissions = commissions.filter(user_id=user_id)
+
+    # Filter by month
+    if month:
+        commissions = commissions.filter(
+            installment__payment_date__month=int(month),
+            installment__payment_date__year=timezone.now().year
+        )
+
+    commissions = commissions.order_by("-installment__payment_date")
+
+    total_commission = commissions.aggregate(
+        total=Sum("amount")
+    )["total"] or 0
+
+    total_paid = commissions.filter(is_paid=True).aggregate(
+        total=Sum("amount")
+    )["total"] or 0
+
+    total_unpaid = total_commission - total_paid
+
+    return render(
+        request,
+        "commission_ledger.html",
+        {
+            "commissions": commissions,
+            "total_commission": total_commission,
+            "total_paid": total_paid,
+            "total_unpaid": total_unpaid,
+        }
+    )
+
+
+
+def mark_commission_paid(request, pk):
+
+    commission = get_object_or_404(Commission, pk=pk)
+
+    commission.is_paid = True
+    commission.paid_at = timezone.now()
+    commission.save()
+
+    return redirect("commission_ledger")

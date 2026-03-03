@@ -1,124 +1,132 @@
 {% load static %}
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <title>LeadCRM | Create Deal</title>
+  <head>
+    <meta charset="utf-8" />
+    <title>LeadCRM | Create Deal</title>
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <link rel="stylesheet" href="{% static 'css/adminlte.css' %}">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{% static 'css/adminlte.css' %}" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+    />
+  </head>
 
-</head>
+  <body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">
+    <div class="app-wrapper">
+      {% include 'navbar.html' %} {% include 'sidebar.html' %}
 
-<body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">
+      <main class="app-main">
+        <div class="app-content-header">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-sm-6">
+                <h3 class="mb-0">Deal Installment Plant</h3>
+              </div>
+              <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-end">
+                  <li class="breadcrumb-item">
+                    <a href="{% url 'dashboard' %}" style="color: black"
+                      >Dashboard</a
+                    >
+                  </li>
+                  <li class="breadcrumb-item active">Create Installment</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
 
-<div class="app-wrapper">
-  {% include 'navbar.html' %}
-  {% include 'sidebar.html' %}
+        <div class="app-content">
+          <div class="container-fluid">
+            <div class="card card-success card-outline">
+              <div class="card-header">
+                <h5 class="card-title">
+                  <i class="bi bi-cash-stack"></i>
+                  Deal for {{ lead.full_name }}
+                </h5>
+              </div>
+              <form method="POST">
+                {% csrf_token %}
 
-<main class="app-main">
+                <div class="card-body">
+                  <h5>Deal Value: ${{ deal.deal_value }}</h5>
+                  <h6>Amount Paid: ${{ deal.amount_paid }}</h6>
+                  <h6>Remaining: ${{ deal.remaining_amount }}</h6>
 
-<div class="app-content-header">
-  <div class="container-fluid">
-    <div class="row">
-      <div class="col-sm-6">
-        <h3 class="mb-0">Deal Installment Plant</h3>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-end">
-          <li class="breadcrumb-item">
-            <a href="{% url 'dashboard' %}" style="color:black">Dashboard</a>
-          </li>
-          <li class="breadcrumb-item active">Create Installment </li>
-        </ol>
-      </div>
+                  <input
+                    type="hidden"
+                    name="return_url"
+                    class="form-control"
+                    value="{{next}}"
+                  />
+
+                  <div class="mb-3">
+                    <label class="form-label">Installment Amount *</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      name="amount"
+                      class="form-control"
+                         value="{{ installment.amount|default:'' }}"
+                      required
+                    />
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">Payment Date *</label>
+                    <input
+                      type="date"
+                      name="payment_date"
+                      class="form-control"
+                             value="{{ installment.payment_date|date:'Y-m-d' }}"
+
+                      required
+                    />
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">Note</label>
+                    <textarea
+                      name="note"
+                      class="form-control"
+                      rows="2"
+                    >{{ installment.note }}</textarea>
+                  </div>
+                </div>
+
+                <div class="card-footer text-end">
+                  <button type="submit" class="btn btn-primary">
+                    Add Installment
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {% include 'footer.html' %}
     </div>
-  </div>
-</div>
 
-<div class="app-content">
-<div class="container-fluid">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/adminlte.js' %}"></script>
 
-<div class="card card-success card-outline">
+    <script>
+      const paymentStatus = document.getElementById("payment_status");
+      const paymentDateSection = document.getElementById(
+        "payment_date_section",
+      );
 
-  <div class="card-header">
-    <h5 class="card-title">
-      <i class="bi bi-cash-stack"></i>
-      Deal for {{ lead.full_name }}
-    </h5>
-  </div>
-<form method="POST">
-{% csrf_token %}
-
-<div class="card-body">
-
-<h5>Deal Value: ${{ deal.deal_value }}</h5>
-<h6>Amount Paid: ${{ deal.amount_paid }}</h6>
-<h6>Remaining: ${{ deal.remaining_amount }}</h6>
-
-    <input type="hidden" name="return_url" class="form-control" value="{{next}}"/>
-
-<div class="mb-3">
-  <label class="form-label">Installment Amount *</label>
-  <input type="number"
-         step="0.01"
-         name="amount"
-         class="form-control"
-         required>
-</div>
-
-<div class="mb-3">
-  <label class="form-label">Payment Date *</label>
-  <input type="date"
-         name="payment_date"
-         class="form-control"
-         required>
-</div>
-
-<div class="mb-3">
-  <label class="form-label">Note</label>
-  <textarea name="note"
-            class="form-control"
-            rows="2"></textarea>
-</div>
-
-</div>
-
-<div class="card-footer text-end">
-  <button type="submit" class="btn btn-primary">
-    Add Installment
-  </button>
-</div>
-
-</form>
-</div>
-
-</div>
-</div>
-
-</main>
-
-{% include 'footer.html' %}
-
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{% static 'js/adminlte.js' %}"></script>
-
-<script>
-  const paymentStatus = document.getElementById("payment_status");
-  const paymentDateSection = document.getElementById("payment_date_section");
-
-  paymentStatus.addEventListener("change", function() {
-    if (this.value === "paid") {
-      paymentDateSection.style.display = "block";
-    } else {
-      paymentDateSection.style.display = "none";
-    }
-  });
-</script>
-
-</body>
+      paymentStatus.addEventListener("change", function () {
+        if (this.value === "paid") {
+          paymentDateSection.style.display = "block";
+        } else {
+          paymentDateSection.style.display = "none";
+        }
+      });
+    </script>
+  </body>
 </html>

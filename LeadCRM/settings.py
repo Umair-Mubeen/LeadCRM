@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-ut7v&r*64n@nd!)nt64^au)ez2e&b(969@6!g1d-+c051xtp*3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.100.31', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['192.168.100.47', '127.0.0.1', 'localhost']
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'LeadApp'
+    'LeadApp.apps.LeadAppConfig',
+
 ]
 
 MIDDLEWARE = [
