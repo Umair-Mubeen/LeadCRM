@@ -225,20 +225,33 @@
        value="{{ lead.social_accounts|default:'' }}">
 </div>
 
+<div class="col-md-6">
+<label class="form-label">Lead Status *</label>
+<select class="form-select" name="verified" required>
+  <option disabled selected> Select Lead Status</option>
+{% for value,label in VERIFIED %}
+<option value="{{ value }}"
+{% if lead and lead.verified == value %}selected{% endif %}>
+{{ label }}
+</option>
+{% endfor %}
+</select>
+</div>
 <!-- ASSIGN USERS -->
 <div class="col-md-6">
 <label class="form-label">Assign To *</label>
+
 <select class="form-select"
         name="userId"
         multiple
         required>
-
 {% for u in users %}
 <option value="{{ u.id }}"
 {% if lead and u in lead.assigned_to.all %}selected{% endif %}>
 {{ u.username }}
 </option>
 {% endfor %}
+<option value="0"> Open </option>
 
 </select>
 </div>

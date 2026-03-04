@@ -25,8 +25,9 @@ path("deal/<int:deal_id>/installment/", views.AddInstallment, name="AddInstallme
 path("installment/delete/<int:installment_id>/",views.DeleteInstallment,name="DeleteInstallment"),
 path("installment/<int:installment_id>/edit/",views.EditInstallment,name="EditInstallment"),
 
-path("commission-ledger/", views.CommissionLedger, name="commission_ledger"),
+path("commission-ledger/", views.CommissionLedger, name="commission-ledger"),
 path("commission-paid/<int:pk>/", views.mark_commission_paid, name="mark_commission_paid"),
+path("commission-rollback/<int:pk>/", views.commission_rollback, name="commission-rollback"),
 
 
 ]

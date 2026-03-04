@@ -1,86 +1,145 @@
-<div class="container mt-4">
+{% load static %}
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>LeadCRM | Manage Commission</title>
 
-<h4 class="mb-3">Commission Ledger</h4>
+    <link rel="stylesheet" href="{% static 'css/adminlte.css' %}" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+    />
 
-<div class="card shadow-sm">
-<div class="card-body p-0">
+    
+  </head>
 
-<table class="table table-bordered align-middle mb-0">
-<thead class="table-light">
-<tr>
-<th>Date</th>
-<th>Salesman</th>
-<th>Deal</th>
-<th>Installment</th>
-<th>%</th>
-<th>Commission</th>
-<th>Status</th>
-<th>Action</th>
-</tr>
-</thead>
+  <body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">
+    <div class="app-wrapper">
+      {% include 'navbar.html' %} {% include 'sidebar.html' %}
 
-<tbody>
+      <main class="app-main">
+        <div class="container-fluid mt-4">
+          <div class="app-content-header">
+            <div class="container-fluid">
+              <div class="row">
+                <div class="col-sm-6"><h3 class="mb-0">LeadCRM</h3></div>
+                <div class="col-sm-6">
+                  <ol class="breadcrumb float-sm-end">
+                    <li class="breadcrumb-item">
+                      <a href="/" style="color: black">Home</a>
+                    </li>
+                    <li class="breadcrumb-item" aria-current="page">
+                      <a href="#" style="color: black"
+                        >View Commission
+                      </a>
+                    </li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </div>
 
-{% for c in commissions %}
+      
 
-<tr>
-<td>{{ c.installment.payment_date }}</td>
-<td>{{ c.user.username }}</td>
-<td>{{ c.installment.deal }}</td>
-<td>PKR {{ c.installment.amount }}</td>
-<td>{{ c.percentage }}%</td>
-<td><strong>PKR {{ c.amount }}</strong></td>
+              <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Manage Commissions</h3>
+            </div>
 
-<td>
-{% if c.is_paid %}
-<span class="badge bg-success">Paid</span>
-{% else %}
-<span class="badge bg-warning text-dark">Unpaid</span>
-{% endif %}
-</td>
+            <div class="card-body">
+              <table class="table table-bordered table-hover align-middle table-striped">
+                <thead class="table-light">
+                      <tr>
+                        <th>Date</th>
+                        <th>Salesman</th>
+                        <th>Deal</th>
+                        <th>Installment</th>
+                        <th>Percentage %</th>
+                        <th>Commission</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
 
-<td>
-{% if not c.is_paid %}
-<a href="{% url 'mark_commission_paid' c.id %}"
-   class="btn btn-sm btn-success">
-   Mark Paid
-</a>
-{% endif %}
-</td>
+                    <tbody>
+                      {% for c in commissions %}
 
-</tr>
+                      <tr>
+                        <td>{{ c.installment.payment_date }}</td>
+                        <td>{{ c.user.username }}</td>
+                        <td>{{ c.installment.deal }}</td>
+                        <td>PKR {{ c.installment.amount }}</td>
+                        <td>{{ c.percentage }}%</td>
+                        <td><strong>PKR {{ c.amount }}</strong></td>
 
-{% empty %}
-<tr>
-<td colspan="8" class="text-center text-muted">
-No commission records found.
-</td>
-</tr>
-{% endfor %}
+                        <td>
+                          {% if c.is_paid %}
+                          <span class="badge bg-success">Paid</span>
+                          {% else %}
+                          <span class="badge bg-warning text-dark">Unpaid</span>
+                          {% endif %}
+                        </td>
 
-</tbody>
+                        <td>
+                          {% if not c.is_paid %}
+                          <a
+                            href="{% url 'mark_commission_paid' c.id %}"
+                            class="btn btn-sm btn-success"
+                          >
+                            Mark Paid
+                          </a>
+                          {% else %}
+                           <a   href="{% url 'commission-rollback' c.id %}"
+                            class="btn btn-sm btn-success"
+                          >
+                            RollBack
+                          </a>
+                          {% endif %}
+                        </td>
+                      </tr>
 
-<tfoot class="table-light">
-<tr>
-<th colspan="5">Total</th>
-<th>PKR {{ total_commission }}</th>
-<th colspan="2"></th>
-</tr>
-<tr>
-<th colspan="5">Paid</th>
-<th class="text-success">PKR {{ total_paid }}</th>
-<th colspan="2"></th>
-</tr>
-<tr>
-<th colspan="5">Unpaid</th>
-<th class="text-danger">PKR {{ total_unpaid }}</th>
-<th colspan="2"></th>
-</tr>
-</tfoot>
+                      {% empty %}
+                      <tr>
+                        <td colspan="8" class="text-center text-muted">
+                          No commission records found.
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
 
-</table>
+                    <tfoot class="">
+                      <tr>
+                        <th colspan="5">Total</th>
+                        <th>PKR {{ total_commission }}</th>
+                        <th colspan="2"></th>
+                      </tr>
+                      <tr>
+                        <th colspan="5">Paid</th>
+                        <th class="text-success">PKR {{ total_paid }}</th>
+                        <th colspan="2"></th>
+                      </tr>
+                       
+                      
+                      <tr>
+                        <th colspan="5">Unpaid</th>
+                        <th class="text-danger">PKR {{ total_unpaid }}</th>
+                        <th colspan="2"></th>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
 
-</div>
-</div>
+    {% include 'footer.html' %}
+    </div>
 
-</div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/adminlte.js' %}"></script>
+  </body>
+</html>

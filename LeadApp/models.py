@@ -127,6 +127,12 @@ class Lead(SoftDeleteModel):
         ('high', 'High'),
     ]
 
+    VERIFIED = [
+        ('verified', 'Verified'),
+        ('unverified', 'Unverified'),
+
+    ]
+
      # Lead Information 
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
@@ -164,6 +170,11 @@ class Lead(SoftDeleteModel):
         max_length=20,
         choices=STATUS_CHOICES,
         default='new'
+    )
+    verified = models.CharField(
+        max_length=20,
+        choices=VERIFIED,
+        default='unverified'
     )
 
     #Lead Assigned to Which SalesMan

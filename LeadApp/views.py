@@ -170,34 +170,36 @@ def dashboard(request):
 
     return render(request, "index.html", context)
 
-
 @login_required
 def ViewLead(request):
 
     user = request.user
     profile = user.profile
+
     status_filter = request.GET.get("status")
     priority_filter = request.GET.get("priority")
 
     base_queryset = Lead.objects.filter(is_deleted=False)
 
+    # Priority filter
     if priority_filter:
         base_queryset = base_queryset.filter(priority=priority_filter)
 
+    # Status filter
     if status_filter:
         base_queryset = base_queryset.filter(status=status_filter)
     else:
         base_queryset = base_queryset.exclude(status="won")
 
-  
-    if not (profile.is_admin or profile.is_lgs):
-        base_queryset = base_queryset.filter(assigned_to=user)
-
-    
-    leads = base_queryset.prefetch_related(Prefetch("lead_followups",queryset=LeadFollowUp.objects.order_by("-created_at")))
+    # Prefetch followups
+    leads = base_queryset.order_by("-date_added").prefetch_related(
+    Prefetch(
+        "lead_followups",
+        queryset=LeadFollowUp.objects.order_by("-created_at")
+    )
+)
 
     return render(request, "view_lead.html", {"leads": leads})
-
 @login_required
 @role_required([UserProfile.ROLE_ADMIN, UserProfile.ROLE_LGS])
 @transaction.atomic
@@ -205,12 +207,14 @@ def AddEditLead(request, leadId=None):
 
     lead = None
     next_url = request.GET.get("next") or request.POST.get("next")
+    print("next_ur : ", next_url)
 
  
     if leadId:
         lead = get_object_or_404(Lead, id=leadId, is_deleted=False)
 
     sales_users = User.objects.select_related("profile").filter( profile__role=UserProfile.ROLE_SALESMAN)
+    print(sales_users)
 
     if request.method == "POST":
 
@@ -233,6 +237,8 @@ def AddEditLead(request, leadId=None):
             "lead_brief": request.POST.get("lead_brief"),
             "status": request.POST.get("status"),
             "priority": request.POST.get("priority"),
+            "verified": request.POST.get("verified"),
+            
         }
 
       
@@ -292,6 +298,8 @@ def AddEditLead(request, leadId=None):
         "STATUS_CHOICES": Lead.STATUS_CHOICES,
         "PRIORITY_CHOICES": Lead.PRIORITY_CHOICES,
         "SOURCE_CHOICES": Lead.SOURCE_CHOICES,
+        "VERIFIED": Lead.VERIFIED,
+        
         "next_url": next_url,
     })
 
@@ -299,18 +307,21 @@ def AddEditLead(request, leadId=None):
 def AddEditFollowup(request, lead_id, followup_id=None):
 
     lead = get_object_or_404(Lead, pk=lead_id, is_deleted=False)
+    print(lead)
     next_url = request.GET.get("next") or request.POST.get("next")
     user = request.user
+    print(user)
 
     # Basic lead access check
     if not (
         user.profile.is_admin
         or user.profile.is_lgs
-        or (user.profile.is_salesman and lead.is_assigned_to(user))
+        or user.profile.is_salesman
     ):
         raise PermissionDenied
 
     followup = None
+    print(followup_id)
 
     if followup_id:
         followup = get_object_or_404(
@@ -318,6 +329,10 @@ def AddEditFollowup(request, lead_id, followup_id=None):
             pk=followup_id,
             lead=lead
         )
+
+        print('followup')
+
+        print(followup)
 
         # 🔥 IMPORTANT: Salesman can edit ONLY his own followup
         if user.profile.is_salesman and followup.created_by != user:
@@ -644,4 +659,15 @@ def mark_commission_paid(request, pk):
     commission.paid_at = timezone.now()
     commission.save()
 
-    return redirect("commission_ledger")
+    return redirect("commission-ledger")
+
+
+def commission_rollback(request, pk):
+
+    commission = get_object_or_404(Commission, pk=pk)
+
+    commission.is_paid = False
+    commission.paid_at = timezone.now()
+    commission.save()
+
+    return redirect("commission-ledger")
