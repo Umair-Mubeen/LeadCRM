@@ -85,6 +85,7 @@
             <th>Last Login</th>
             <th>Joined</th>
             <th>Permissions</th>
+            
             <th>Actions</th>
         </tr>
     </thead>
@@ -152,7 +153,6 @@
 
                 </div>
             </td>
-
             <!-- Actions -->
             <td>
                 {% if request.user.profile.is_admin %}
@@ -168,7 +168,20 @@
                             Delete
                         </a>
                     {% endif %}
-                {% endif %}
+                
+                          {% if u.profile.is_salesman %}
+
+<a
+class="btn btn-sm btn-outline-primary"
+href="{% url 'AddSalesTarget' u.id %}?next={{ request.get_full_path|urlencode }}">
+<i class="bi bi-bullseye me-1"></i>
+Add Sales Target
+</a>
+
+{% endif %}
+     
+                    {% endif %}
+
             </td>
 
         </tr>

@@ -16,8 +16,8 @@ from .graph import RevenueDashboard
 from django.db import transaction
 from django.contrib import messages
 from django.urls import reverse
-
-from .models import UserProfile, Lead, LeadFollowUp, LeadStatusHistory, Deal, Commission, DealInstallment
+from datetime import datetime
+from .models import UserProfile, Lead, LeadFollowUp, LeadStatusHistory, Deal, Commission, DealInstallment, SalesTarget
 
 import json
 def role_required(allowed_roles):
@@ -84,6 +84,9 @@ def dashboard(request):
     high_priority_leads = leads.filter(priority="high").exclude(status="won").count()
     overdue_followups = followups.filter(next_followup_date__lt=today,is_completed=False).count()
     today_followups = followups.filter(next_followup_date=today,is_completed=False).count()
+
+    target = SalesTarget.objects.filter(user=request.user,month=today.month,year=today.year).first()
+
 
     conversion_rate = 0
     if total_leads > 0:
@@ -160,10 +163,10 @@ def dashboard(request):
         "pending_revenue" : pending_revenue,
         "salesman_stats" : salesman_stats,
         "total_commission": total_commission,
-          "rev": rev,
-                "months_list": months_list,
+        "rev": rev,
+        "months_list": months_list,
         "selected_month": int(month) if month else None,
-     
+        "target" : target   
         
     }
 
@@ -214,7 +217,6 @@ def AddEditLead(request, leadId=None):
         lead = get_object_or_404(Lead, id=leadId, is_deleted=False)
 
     sales_users = User.objects.select_related("profile").filter( profile__role=UserProfile.ROLE_SALESMAN)
-    print(sales_users)
 
     if request.method == "POST":
 
@@ -321,21 +323,17 @@ def AddEditFollowup(request, lead_id, followup_id=None):
         raise PermissionDenied
 
     followup = None
-    print(followup_id)
 
     if followup_id:
         followup = get_object_or_404(
             LeadFollowUp,
             pk=followup_id,
-            lead=lead
+            lead=lead,
+            created_by_id = request.user
         )
 
-        print('followup')
-
-        print(followup)
-
-        # 🔥 IMPORTANT: Salesman can edit ONLY his own followup
-        if user.profile.is_salesman and followup.created_by != user:
+        # permission check
+        if not (request.user.profile.is_admin or request.user.profile.is_salesman or request.user.profile.is_lgs):
             raise PermissionDenied
 
     if request.method == "POST":
@@ -546,7 +544,6 @@ def DeleteInstallment(request, installment_id):
 
     return redirect("ViewLead")
 
-from django.db import transaction
 
 @transaction.atomic
 def EditInstallment(request, installment_id):
@@ -568,10 +565,6 @@ def EditInstallment(request, installment_id):
 
         # 🔒 Prevent editing if commission already paid
         if installment.commissions.filter(is_paid=True).exists():
-            messages.error(
-                request,
-                "Cannot edit installment. Commission already paid."
-            )
             return redirect("ViewLead")
 
         installment.amount = new_amount
@@ -581,11 +574,7 @@ def EditInstallment(request, installment_id):
 
         # 🔥 Recalculate commissions safely
         for commission in installment.commissions.filter(is_deleted=False):
-
-            commission.amount = (
-                new_amount * commission.percentage
-            ) / Decimal("100")
-
+            commission.amount = ( new_amount * commission.percentage) / Decimal("100")
             commission.save()
 
         # Update deal payment status
@@ -604,6 +593,7 @@ def EditInstallment(request, installment_id):
     })
 
 
+@login_required
 def CommissionLedger(request):
 
     user_id = request.GET.get("user")
@@ -650,7 +640,7 @@ def CommissionLedger(request):
     )
 
 
-
+@login_required
 def mark_commission_paid(request, pk):
 
     commission = get_object_or_404(Commission, pk=pk)
@@ -661,7 +651,7 @@ def mark_commission_paid(request, pk):
 
     return redirect("commission-ledger")
 
-
+@login_required
 def commission_rollback(request, pk):
 
     commission = get_object_or_404(Commission, pk=pk)
@@ -671,3 +661,38 @@ def commission_rollback(request, pk):
     commission.save()
 
     return redirect("commission-ledger")
+
+@login_required
+def AddSalesTarget(request, userId):
+
+    users = User.objects.filter(profile__role="SALESMAN")
+    
+
+    next_url = request.GET.get("next") or request.POST.get("next")
+
+    if request.method == "POST":
+
+        month = request.POST.get("month")
+        year = request.POST.get("year")
+        target_amount = request.POST.get("target_amount")
+
+        SalesTarget.objects.create(
+            user_id=userId,
+            month=month,
+            year=year,
+            target_amount=target_amount
+        )
+
+        messages.success(request, "Sales Target Saved")
+
+        if next_url:
+            return redirect(next_url)
+
+        return redirect("dashboard")
+
+    return render(request, "AddSalesTarget.html", {
+        "users": users,
+        "selected_user": userId,
+        "current_year": datetime.now().year,
+        "next_url": next_url
+    })

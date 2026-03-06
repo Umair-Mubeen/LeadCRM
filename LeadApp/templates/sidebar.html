@@ -15,7 +15,7 @@
                 <a href="#" class="nav-link">
                   <i class="nav-icon bi bi-speedometer"></i>
                   <p>
-                    User
+                    User Management
                     <i class="nav-arrow bi bi-chevron-right"></i>
                   </p>
                 </a>
@@ -29,11 +29,38 @@
                   <li class="nav-item">
                     <a href="{% url 'viewusers' %}" class="nav-link">
                       <i class="nav-icon bi bi-circle"></i>
-                      <p>Manage Users</p>
+                      <p>Staff Members</p>
+                    </a>
+                  </li>
+                  
+                  <li class="nav-item">
+                <a href="#" class="nav-link">
+                  <i class="nav-icon bi bi-speedometer"></i>
+                  <p>
+                    Salesman
+                      <i class="nav-arrow bi bi-chevron-right"></i>
+                  </p>
+                </a>
+                <ul class="nav nav-treeview" role="navigation" aria-label="Navigation 4">
+                  <li class="nav-item">
+                    <a href="#" class="nav-link">
+                      <i class="nav-icon bi bi-circle"></i>
+                      <p>Salesman</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="#" class="nav-link">
+                      <i class="nav-icon bi bi-circle"></i>
+                      <p>Salesman Booking</p>
                     </a>
                   </li>
                   
                 </ul>
+              </li>
+              
+                </ul>
+
+                
               </li>
               {% endif %}
 
@@ -67,6 +94,7 @@
         <p>Converted Lead</p>
     </a>
 </li>
+              {% if user.is_superuser and user.profile.role != "LGS" %}
 
 <li class="nav-item">
     <a href="{% url 'commission-ledger' %}" class="nav-link">
@@ -74,7 +102,7 @@
         <p>Commission</p>
     </a>
 </li>
-                  
+ {% endif %}                  
                 </ul>
               </li>
 

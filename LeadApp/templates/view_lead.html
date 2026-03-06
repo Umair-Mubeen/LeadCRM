@@ -123,48 +123,45 @@
                     <td>
                       {% if not lead.is_converted %}
 
-<div class="dropdown">
+                      <div class="dropdown">
+                        <button
+                          class="btn btn-sm btn-secondary dropdown-toggle"
+                          data-bs-toggle="dropdown"
+                        >
+                          Actions
+                        </button>
 
-  <button
-    class="btn btn-sm btn-secondary dropdown-toggle"
-    data-bs-toggle="dropdown">
-    Actions
-  </button>
+                        <ul class="dropdown-menu">
+                          <!-- Edit only Admin & LGS -->
+                          {% if request.user.profile.is_admin or request.user.profile.is_lgs %}
+                            <li>
+                              <a
+                                class="dropdown-item"
+                                href="{% url 'EditLead' lead.id %}?next={{ request.get_full_path|urlencode }}"
+                              >
+                                <i class="bi bi-pencil-square me-2"></i> Edit
+                              </a>
+                            </li>
+                          {% endif %}
 
-  <ul class="dropdown-menu">
+                          <!-- Followup Admin / LGS / Salesman -->
+                          {% if request.user.profile.is_admin or request.user.profile.is_lgs or request.user.profile.is_salesman %}
+                          <li>
+                            <a
+                              class="dropdown-item"
+                              href="{% url 'AddEditFollowup' lead.id %}?next={{ request.get_full_path|urlencode }}"
+                            >
+                              <i class="bi bi-telephone me-2"></i> Add Followup
+                            </a>
+                          </li>
 
-    <!-- Edit only Admin & LGS -->
-    {% if request.user.profile.is_admin or request.user.profile.is_lgs %}
-    <li>
-      <a class="dropdown-item"
-         href="{% url 'EditLead' lead.id %}?next={{ request.get_full_path|urlencode }}">
-         <i class="bi bi-pencil-square me-2"></i> Edit
-      </a>
-    </li>
-    {% endif %}
+                          {% endif %}
+                        </ul>
+                      </div>
 
-    <!-- Followup Admin / LGS / Salesman -->
-    {% if request.user.profile.is_admin or request.user.profile.is_lgs or request.user.profile.is_salesman %}
-    <li>
-      <a class="dropdown-item"
-         href="{% url 'AddEditFollowup' lead.id %}?next={{ request.get_full_path|urlencode }}">
-         <i class="bi bi-telephone me-2"></i> Add Followup
-      </a>
-    </li>
-   
-    
-
-    
-
-    {% endif %}
-
-  </ul>
-
-</div>
-
-{% else %}
-<span class="badge bg-success">Converted</span>
-{% endif %}
+                      {% else %}
+                      <span class="badge bg-success">Converted</span>
+                      {% endif %}
                     </td>
 
                     <td>
@@ -181,416 +178,219 @@
 
                   <!-- COLLAPSE -->
                   <!-- COLLAPSE -->
-<tr class="collapse-row">
-<td colspan="12" class="p-0">
-
-<div id="collapse{{ lead.id }}" class="collapse" data-bs-parent="#leadAccordion">
-
-<div class="p-4 bg-white border rounded">
-
-<!-- ================= HEADER ================= -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-
-<div>
-<h5 class="fw-bold mb-0">{{ lead.full_name }}</h5>
-<small class="text-muted">{{ lead.mobile_number }}</small>
-</div>
-
-<div>
-<span class="badge bg-{{ lead.get_status_badge }}">
-{{ lead.get_status_display }}
-</span>
-
-{% if lead.is_converted %}
-<span class="badge bg-success">Converted</span>
-{% endif %}
-</div>
-
-</div>
-
-<!-- ================= LEAD INFO ================= -->
-<div class="row mb-4">
-
-<div class="col-md-6">
-<div class="card border-0 shadow-sm">
-<div class="card-body">
-
-<h6 class="fw-bold text-primary mb-3">
-<i class="bi bi-person"></i> Lead Information
-</h6>
-
-<p><strong>Email:</strong> {{ lead.email|default:"—" }}</p>
-<p><strong>Source:</strong> {{ lead.get_source_display }}</p>
-
-<p style="text-align:justify">
-<strong>Brief:</strong><br>
-{{ lead.lead_brief|default:"—" }}
-</p>
-
-<p style="text-align:justify">
-<strong>Lead Status:</strong><br>
-<span class="{% if lead.verified == 'verified' %}badge bg-success {% else %}badge bg-danger{% endif %}" >{{ lead.verified}} </span>
-</p>
-
-</div>
-</div>
-</div>
-
-
-<div class="col-md-6">
-<div class="card border-0 shadow-sm">
-<div class="card-body">
-
-<h6 class="fw-bold text-primary mb-3">
-<i class="bi bi-briefcase"></i> Business Details
-</h6>
-
-<p><strong>Budget:</strong> {{ lead.budget|default:"—" }}</p>
-
-<p>
-<strong>Assigned To:</strong>
-
-{% for u in lead.assigned_to.all %}
-<span class="badge bg-info">{{ u.username }}</span>
-{% if request.user.profile.is_admin or request.user.profile.is_lgs %}
- 
-      <a class="dropdown-item"
-         href="{% url 'EditLead' lead.id %}?next={{ request.get_full_path|urlencode }}">
-         <i class="bi bi-pencil-square me-2"></i> Edit
-      </a>
-    {% endif %}
-
-{% empty %}
-<span class="text-muted">Open
-  {% if request.user.profile.is_admin or request.user.profile.is_lgs %}
-      <a class="dropdown-item"
-         href="{% url 'EditLead' lead.id %}?next={{ request.get_full_path|urlencode }}">
-         <i class="bi bi-pencil-square me-2"></i> Edit
-      </a>
-    {% endif %}
-
-</span>
-{% endfor %}
-
-
-</p>
-
-</div>
-</div>
-</div>
-
-</div>
-
-
-<!-- ================= DEAL SECTION ================= -->
-
-{% if lead.is_converted %}
-
-<div class="card border-0 shadow-sm mb-4">
-<div class="card-body">
-
-<div class="d-flex justify-content-between align-items-center mb-3">
-
-<h6 class="fw-bold text-success mb-0">
-<i class="bi bi-cash-stack"></i> Deal Summary
-</h6>
-
-{% if request.user.profile.is_admin %}
-
-{% if lead.deal %}
-
-{% if not lead.deal.is_paid %}
-
-<div>
-
-<a href="{% url 'CreateDeal' lead.id %}?next={{ request.get_full_path|urlencode }}"
-class="btn btn-sm btn-outline-success">
-<i class="bi bi-pencil-square"></i> Update Deal
-</a>
-
-<a href="{% url 'AddInstallment' lead.deal.id %}?next={{ request.get_full_path|urlencode }}"
-class="btn btn-sm btn-outline-primary">
-<i class="bi bi-plus-circle"></i> Add Payment
-</a>
-
-</div>
-
-{% else %}
-
-<span class="badge bg-success">
-Deal Fully Paid
-</span>
-
-{% endif %}
-
-{% else %}
-
-<a href="{% url 'CreateDeal' lead.id %}?next={{ request.get_full_path|urlencode }}"
-class="btn btn-sm btn-success">
-<i class="bi bi-plus-circle"></i> Add Deal
-</a>
-
-{% endif %}
-
-{% endif %}
-
-</div>
-
-
-{% if lead.deal %}
-
-<div class="row">
-
-<div class="col-md-4">
-<strong>Total Deal</strong>
-<p class="text-success fw-bold">
-${{ lead.deal.deal_value|floatformat:2 }}
-</p>
-</div>
-
-<div class="col-md-4">
-<strong>Paid</strong>
-<p class="text-primary fw-bold">
-${{ lead.deal.amount_paid|floatformat:2 }}
-</p>
-</div>
-
-<div class="col-md-4">
-<strong>Remaining</strong>
-<p class="text-danger fw-bold">
-${{ lead.deal.remaining_amount|floatformat:2 }}
-</p>
-</div>
-
-</div>
-
-<div class="progress mt-2" style="height:20px">
-
-<div class="progress-bar bg-success"
-style="width:{{lead.deal.payment_percentage}}%">
-
-{{lead.deal.payment_percentage}}%
-
-</div>
-
-</div>
-
-<p class="mt-3">
-<strong>Closing Date:</strong>
-{{ lead.deal.closing_date }}
-</p>
-
-{% endif %}
-
-</div>
-</div>
-
-{% endif %}
-
-
-<!-- ================= INSTALLMENT HISTORY ================= -->
-
-{% if lead.deal %}
-
-<div class="card border-0 shadow-sm mb-4">
-<div class="card-body">
-
-<h6 class="fw-bold text-primary mb-3">
-<i class="bi bi-clock-history"></i> Payment Installment History
-</h6>
-
-{% if lead.deal.installments.all %}
-
-<div class="table-responsive">
-
-<table class="table table-sm table-bordered align-middle">
-
-<thead class="table-light">
-
-<tr>
-<th>#</th>
-<th>Payment Date</th>
-<th>Amount</th>
-<th>Note</th>
-<th>Added By</th>
-
-{% if request.user.profile.is_admin %}
-<th width="120">Actions</th>
-{% endif %}
-
-</tr>
-
-</thead>
-
-<tbody>
-
-{% for installment in lead.deal.installments.all %}
-
-<tr>
-
-<td>{{ forloop.counter }}</td>
-
-<td>{{ installment.payment_date|date:"d M Y" }}</td>
-
-<td class="text-success fw-bold">
-${{ installment.amount|floatformat:2 }}
-</td>
-
-<td>{{ installment.note|default:"—" }}</td>
-
-<td>
-{{ installment.created_by.username|default:"System" }}
-</td>
-
-{% if request.user.profile.is_admin %}
-
-<td>
-
-{% if not lead.deal.is_paid %}
-
-<a href="{% url 'EditInstallment' installment.id %}?next={{ request.get_full_path|urlencode }}"
-class="btn btn-sm btn-outline-primary"
-title="Edit">
-
-<i class="bi bi-pencil-square"></i>
-
-</a>
-
-<a href="{% url 'DeleteInstallment' installment.id %}"
-class="btn btn-sm btn-outline-danger"
-title="Delete"
-onclick="return confirm('Are you sure you want to delete this installment?');">
-
-<i class="bi bi-trash"></i>
-
-</a>
-
-{% else %}
-
-<span class="badge bg-secondary">Locked</span>
-
-{% endif %}
-
-</td>
-
-{% endif %}
-
-</tr>
-
-{% endfor %}
-
-</tbody>
-
-<tfoot class="table-light">
-
-<tr>
-<th colspan="2">Total Paid</th>
-
-<th colspan="4" class="text-success">
-
-${{ lead.deal.amount_paid|floatformat:2 }}
-
-</th>
-
-</tr>
-
-</tfoot>
-
-</table>
-
-</div>
-
-{% else %}
-
-<p class="text-muted">No installments added yet.</p>
-
-{% endif %}
-
-</div>
-</div>
-
-{% endif %}
-
-
-<!-- ================= FOLLOWUPS ================= -->
-
-<div class="card border-0 shadow-sm mb-4">
-<div class="card-body">
-
-<h6 class="fw-bold text-success mb-3">
-<i class="bi bi-telephone"></i> Followup History
-</h6>
-
-{% for f in lead.lead_followups.all %}
-
-<div class="border rounded p-2 mb-2 bg-light">
-
-<strong>{{ f.created_by.username }}</strong>
-
-<small class="text-muted">
-{{f.created_at|date:"d M Y H:i"}}
-</small>
-
-<p class="mb-0">{{ f.note }}</p>
-
-</div>
-
-{% empty %}
-
-<p class="text-muted">No followups yet</p>
-
-{% endfor %}
-
-</div>
-</div>
-
-
-<!-- ================= STATUS HISTORY ================= -->
-
-<div class="card border-0 shadow-sm">
-
-<div class="card-body">
-
-<h6 class="fw-bold text-danger mb-3">
-<i class="bi bi-clock-history"></i> Status History
-</h6>
-
-{% for s in lead.status_history.all %}
-
-<div class="mb-2">
-
-<small>
-
-<strong>{{ s.old_status|capfirst }}</strong>
-→
-<strong>{{ s.new_status|capfirst }}</strong>
-
-<br>
-
-{{ s.changed_by.username }}
-•
-{{ s.changed_at|date:"d M Y H:i" }}
-
-</small>
-
-</div>
-
-{% empty %}
-
-<p class="text-muted">No status changes recorded</p>
-
-{% endfor %}
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</td>
-</tr>
+                  <tr class="collapse-row">
+                    <td colspan="12" class="p-0">
+                      <div
+                        id="collapse{{ lead.id }}"
+                        class="collapse"
+                        data-bs-parent="#leadAccordion"
+                      >
+                        <div class="p-4 bg-white border rounded">
+                          <!-- ================= HEADER ================= -->
+                          <div
+                            class="d-flex justify-content-between align-items-center mb-4"
+                          >
+                            <div>
+                              <h5 class="fw-bold mb-0">{{ lead.full_name }}</h5>
+                              <small class="text-muted"
+                                >{{ lead.mobile_number }}</small
+                              >
+                            </div>
+
+                            <div>
+                              <span
+                                class="badge bg-{{ lead.get_status_badge }}"
+                              >
+                                {{ lead.get_status_display }}
+                              </span>
+
+                              {% if lead.is_converted %}
+                              <span class="badge bg-success">Converted</span>
+                              {% endif %}
+                            </div>
+                          </div>
+
+                          <!-- ================= LEAD INFO ================= -->
+                          <div class="row mb-4">
+                            <div class="col-md-6">
+                              <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                  <h6 class="fw-bold text-primary mb-3">
+                                    <i class="bi bi-person"></i> Lead
+                                    Information
+                                  </h6>
+
+                                  <p>
+                                    <strong>Email:</strong> {{lead.email|default:"—" }}
+                                  </p>
+                                  <p>
+                                    <strong>Source:</strong> {{lead.get_source_display }}
+                                  </p>
+
+                                  <p style="text-align: justify">
+                                    <strong>Brief:</strong><br />
+                                    {{ lead.lead_brief|default:"—" }}
+                                  </p>
+
+                                  <p style="text-align: justify">
+                                    <strong>Lead Status:</strong><br />
+                                    <span
+                                      class="{% if lead.verified == 'verified' %}badge bg-success {% else %}badge bg-danger{% endif %}"
+                                      >{{ lead.verified}}
+                                    </span>
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div class="col-md-6">
+                              <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                  <h6 class="fw-bold text-primary mb-3">
+                                    <i class="bi bi-briefcase"></i> Business
+                                    Details
+                                  </h6>
+
+                                  <p>
+                                    <strong>Budget:</strong> {{lead.budget|default:"—" }}
+                                  </p>
+                                  <p>
+                                    <strong>Assigned To:</strong>
+
+                                    {% if lead.assigned_to.all %} {% for u in lead.assigned_to.all %}
+                                    <span class="badge bg-info"
+                                      >{{ u.username }}</span
+                                    >
+                                    {% endfor %} {% else %}
+
+                                    <span class="badge bg-secondary">Open</span>
+                                    {% endif %}
+
+                                    <!-- or request.user.profile.is_lgs  -->
+                                    {% if request.user.profile.is_admin %}
+                                    <a
+                                      class="btn btn-sm btn-outline-primary ms-2"
+                                      href="{% url 'EditLead' lead.id %}?next={{ request.get_full_path|urlencode }}"
+                                    >
+                                      <i class="bi bi-pencil-square me-1"></i>
+                                      Edit
+                                    </a>
+
+                                      <!-- <a
+                                        class="btn btn-sm btn-outline-primary ms-2"
+                                        href="{% url 'AddSalesTarget' lead.id %}?userId={{ lead.assigned_to.first.id }}&next={{ request.get_full_path|urlencode }}">
+                                        <i class="bi bi-bullseye me-1"></i>
+                                        Add Sales Target
+                                      </a> -->
+                                    {% endif %}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- ================= DEAL SECTION ================= -->
+
+                          {% if lead.is_converted %}
+
+                          <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-body">
+                              <div
+                                class="d-flex justify-content-between align-items-center mb-3"
+                              >
+                                <h6 class="fw-bold text-success mb-0">
+                                  <i class="bi bi-cash-stack"></i> Deal Summary
+                                </h6>
+
+                                {% if request.user.profile.is_admin %} {% if lead.deal %} {% if not lead.deal.is_paid %}
+
+                                <div>
+                                  <a
+                                    href="{% url 'CreateDeal' lead.id %}?next={{ request.get_full_path|urlencode }}"
+                                    class="btn btn-sm btn-outline-success"
+                                  >
+                                    <i class="bi bi-pencil-square"></i> Update
+                                    Deal
+                                  </a>
+
+                                  <a
+                                    href="{% url 'AddInstallment' lead.deal.id %}?next={{ request.get_full_path|urlencode }}"
+                                    class="btn btn-sm btn-outline-primary"
+                                  >
+                                    <i class="bi bi-plus-circle"></i> Add
+                                    Payment
+                                  </a>
+                                </div>
+
+                                {% else %}
+
+                                <span class="badge bg-success">
+                                  Deal Fully Paid
+                                </span>
+
+                                {% endif %} {% else %}
+
+                                <a
+                                  href="{% url 'CreateDeal' lead.id %}?next={{ request.get_full_path|urlencode }}"
+                                  class="btn btn-sm btn-success"
+                                >
+                                  <i class="bi bi-plus-circle"></i> Add Deal
+                                </a>
+
+                                {% endif %} {% endif %}
+                              </div>
+
+                              {% if lead.deal %}
+
+                              <div class="row">
+                                <div class="col-md-4">
+                                  <strong>Total Deal</strong>
+                                  <p class="text-success fw-bold">
+                                    ${{ lead.deal.deal_value|floatformat:2 }}
+                                  </p>
+                                </div>
+
+                                <div class="col-md-4">
+                                  <strong>Paid</strong>
+                                  <p class="text-primary fw-bold">
+                                    ${{ lead.deal.amount_paid|floatformat:2 }}
+                                  </p>
+                                </div>
+
+                                <div class="col-md-4">
+                                  <strong>Remaining</strong>
+                                  <p class="text-danger fw-bold"> ${{ lead.deal.remaining_amount|floatformat:2}}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div class="progress mt-2" style="height: 20px">
+                                <div
+                                  class="progress-bar bg-success"
+                                  style="width:{{lead.deal.payment_percentage}}%"
+                                >
+                                  {{lead.deal.payment_percentage}}%
+                                </div>
+                              </div>
+
+                              <p class="mt-3">
+                                <strong>Closing Date:</strong>
+                                {{ lead.deal.closing_date }}
+                              </p>
+
+                              {% endif %}
+                            </div>
+                          </div>
+
+                          {% endif %}
+
+                            {% include 'installment_history.html' with lead=lead %} 
+                            {% include 'lead_followup.html' with lead=lead %} 
+                            {% include 'lead_status_history.html' with lead=lead %}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
                   {% empty %}
                   <tr>
                     <td colspan="12" class="text-center text-muted">

@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from decimal import Decimal
 from django.conf import settings
-
+from django.db.models import Sum
 from django.db import models
 
 
@@ -542,3 +542,119 @@ class Commission(SoftDeleteModel):
 
     def __str__(self):
         return f"{self.user.username} - {self.amount}"
+
+
+
+from django.db import models
+from django.contrib.auth.models import User
+from django.db.models import Sum
+from decimal import Decimal
+
+class SalesTarget(models.Model):
+
+    MONTH_CHOICES = [
+        (1, "January"),
+        (2, "February"),
+        (3, "March"),
+        (4, "April"),
+        (5, "May"),
+        (6, "June"),
+        (7, "July"),
+        (8, "August"),
+        (9, "September"),
+        (10, "October"),
+        (11, "November"),
+        (12, "December"),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="sales_targets"
+    )
+
+    month = models.IntegerField(
+        choices=MONTH_CHOICES
+    )
+
+    year = models.IntegerField()
+
+    target_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True
+    )
+
+    class Meta:
+        unique_together = ("user", "month", "year")
+        ordering = ["-year", "-month"]
+
+    def __str__(self):
+        return f"{self.user.username} Target - {self.get_month_display()} {self.year}"
+
+    # ===============================
+    # SALES ACHIEVEMENT
+    # ===============================
+
+    @property
+    def achieved_amount(self):
+
+        from .models import DealInstallment
+
+        total = DealInstallment.objects.filter(
+            deal__created_by=self.user,
+            payment_date__month=self.month,
+            payment_date__year=self.year,
+            is_deleted=False
+        ).aggregate(
+            total=Sum("amount")
+        )["total"]
+
+        return total or Decimal("0.00")
+
+    # ===============================
+    # REMAINING TARGET
+    # ===============================
+
+    @property
+    def remaining_amount(self):
+
+        remaining = self.target_amount - self.achieved_amount
+
+        if remaining < 0:
+            return Decimal("0.00")
+
+        return remaining
+
+    # ===============================
+    # TARGET PROGRESS %
+    # ===============================
+
+    @property
+    def progress_percentage(self):
+
+        if self.target_amount == 0:
+            return 0
+
+        percentage = (
+            self.achieved_amount / self.target_amount
+        ) * 100
+
+        return round(percentage, 2)
+
+    # ===============================
+    # TARGET COMPLETED
+    # ===============================
+
+    @property
+    def is_target_completed(self):
+
+        return self.achieved_amount >= self.target_amount
+

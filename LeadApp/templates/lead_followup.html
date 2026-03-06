@@ -1,0 +1,43 @@
+
+<div class="card border-0 shadow-sm mb-4">
+<div class="card-body">
+
+<h6 class="fw-bold text-success mb-3">
+<i class="bi bi-telephone"></i> Followup History
+</h6>
+
+{% for f in lead.lead_followups.all %}
+
+<div class="border rounded p-2 mb-2 bg-light">
+
+<strong>
+{{ f.created_by.username }}
+
+{% if f.created_by == request.user %}
+<span class="badge bg-success">You</span>
+{% endif %}
+
+</strong>
+
+<small class="text-muted">
+{{ f.created_at|date:"d M Y H:i" }}
+</small>
+
+<p class="mb-0">{{ f.note }}</p>
+
+{% if f.created_by == request.user %}
+<a href="{% url 'EditFollowup' lead.id f.id %}?next={{ request.get_full_path|urlencode }}"
+   class="btn btn-sm btn-outline-primary">
+<i class="bi bi-pencil"></i> Edit
+</a>
+{% endif %}
+
+</div>
+
+{% empty %}
+
+<p class="text-muted">No followups yet</p>
+
+{% endfor %}
+</div>
+</div>
