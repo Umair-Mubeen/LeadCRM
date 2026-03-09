@@ -28,6 +28,6 @@ path("installment/<int:installment_id>/edit/",views.EditInstallment,name="EditIn
 path("commission-ledger/", views.CommissionLedger, name="commission-ledger"),
 path("commission-paid/<int:pk>/", views.mark_commission_paid, name="mark_commission_paid"),
 path("commission-rollback/<int:pk>/", views.commission_rollback, name="commission-rollback"),
-path("AddSalesTarget/<int:userId>/", views.AddSalesTarget, name="AddSalesTarget")
-
+path("AddSalesTarget/<int:userId>/", views.AddSalesTarget, name="AddSalesTarget"),
+path("add-call-log/<int:lead_id>/", views.add_call_log, name="add-call-log"),
 ]

@@ -384,6 +384,7 @@
 
                           {% endif %}
 
+                             {% include 'lead_call_history.html' with lead=lead %}           
                             {% include 'installment_history.html' with lead=lead %} 
                             {% include 'lead_followup.html' with lead=lead %} 
                             {% include 'lead_status_history.html' with lead=lead %}
@@ -410,16 +411,19 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'js/adminlte.js' %}"></script>
+
+{% include "add_call_logs.html" with lead=lead %}
   </body>
 </html>
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    if (window.location.hash) {
-      var target = document.querySelector(window.location.hash);
-      if (target) {
-        var collapse = new bootstrap.Collapse(target, { toggle: true });
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    }
-  });
+function setCallLogAction(button){
+
+    let leadId = button.dataset.leadId;
+    let nextUrl = encodeURIComponent(button.dataset.next);
+
+    let form = document.getElementById("callLogForm");
+
+    form.action = "/add-call-log/" + leadId + "/?next=" + nextUrl;
+
+}
 </script>

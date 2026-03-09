@@ -1,0 +1,70 @@
+<div class="modal fade" id="callLogModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title">📞 Add Call Log</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        {{lead.}}
+
+<form method="POST" id="callLogForm">
+                      {% csrf_token %}
+
+          <div class="row">
+
+            <div class="col-md-3">
+              <label class="form-label">Call Type</label>
+              <select name="call_type" class="form-control">
+                <option value="outgoing">Outgoing</option>
+                <option value="incoming">Incoming</option>
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Status</label>
+              <select name="call_status" class="form-control">
+                <option value="connected">Connected</option>
+                <option value="no_answer">No Answer</option>
+                <option value="busy">Busy</option>
+                <option value="wrong_number">Wrong Number</option>
+                <option value="voicemail">Voicemail</option>
+              </select>
+            </div>
+
+            <div class="col-md-2">
+              <label class="form-label">Duration (sec)</label>
+              <input type="number" name="call_duration" class="form-control">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Next Follow Up</label>
+              <input type="date" name="next_followup_date" class="form-control">
+            </div>
+
+            <div class="col-md-12 mt-3">
+              <label class="form-label">Notes</label>
+              <textarea name="notes" class="form-control" rows="3"></textarea>
+            </div>
+
+          </div>
+
+          <div class="mt-4 text-end">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                Cancel
+            </button>
+
+            <button type="submit" class="btn btn-success">
+    Save Call Log
+</button>
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+  </div>
+</div>

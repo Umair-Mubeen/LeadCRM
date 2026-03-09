@@ -237,6 +237,7 @@ class Lead(SoftDeleteModel):
 
     def is_assigned_to(self, user):
         return self.assigned_to.filter(id=user.id).exists()
+    
 
     def get_status_badge(self):
         mapping = {
@@ -544,14 +545,7 @@ class Commission(SoftDeleteModel):
         return f"{self.user.username} - {self.amount}"
 
 
-
-from django.db import models
-from django.contrib.auth.models import User
-from django.db.models import Sum
-from decimal import Decimal
-
 class SalesTarget(models.Model):
-
     MONTH_CHOICES = [
         (1, "January"),
         (2, "February"),
@@ -658,3 +652,85 @@ class SalesTarget(models.Model):
 
         return self.achieved_amount >= self.target_amount
 
+
+
+
+class CallLog(SoftDeleteModel):
+
+    CALL_TYPE = [
+        ("incoming", "Incoming"),
+        ("outgoing", "Outgoing"),
+    ]
+
+    CALL_STATUS = [
+        ("connected", "Connected"),
+        ("no_answer", "No Answer"),
+        ("busy", "Busy"),
+        ("wrong_number", "Wrong Number"),
+        ("voicemail", "Voicemail"),
+    ]
+
+    lead = models.ForeignKey(
+        Lead,
+        on_delete=models.CASCADE,
+        related_name="call_logs"
+    )
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="calls_made"
+    )
+
+    call_type = models.CharField(
+        max_length=10,
+        choices=CALL_TYPE,
+        default="outgoing"
+    )
+
+    call_status = models.CharField(
+        max_length=20,
+        choices=CALL_STATUS
+    )
+
+    call_duration = models.IntegerField(
+        help_text="Duration in seconds",
+        null=True,
+        blank=True
+    )
+
+    notes = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    next_followup_date = models.DateField(
+        null=True,
+        blank=True
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def save(self, *args, **kwargs):
+
+        super().save(*args, **kwargs)
+
+        if not self.lead.last_contacted or self.lead.last_contacted < timezone.now():
+            self.lead.last_contacted = timezone.now()
+            self.lead.save(update_fields=["last_contacted"])
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["call_status"]),
+        ]
+
+    def __str__(self):
+        return f"{self.lead.full_name} - {self.user}"
+    
+
+    

@@ -17,7 +17,7 @@ from django.db import transaction
 from django.contrib import messages
 from django.urls import reverse
 from datetime import datetime
-from .models import UserProfile, Lead, LeadFollowUp, LeadStatusHistory, Deal, Commission, DealInstallment, SalesTarget
+from .models import UserProfile, Lead, LeadFollowUp, LeadStatusHistory, Deal, Commission, DealInstallment, SalesTarget, CallLog
 
 import json
 def role_required(allowed_roles):
@@ -279,13 +279,16 @@ def AddEditLead(request, leadId=None):
         
         # SAFE REDIRECT LOGIC
         collapse_hash = f"#collapse{lead.id}"
+        print("collapse_hash", collapse_hash)
         viewlead_url = reverse("ViewLead")
+        
 
         # Converted → go to converted tab
         if lead.status == "won":
             return redirect( f"{viewlead_url}?status=won{collapse_hash}")
 
         if next_url and next_url != "None":
+            print(f"{next_url}{collapse_hash}")
             return redirect(
                 f"{next_url}{collapse_hash}"
             )
@@ -538,8 +541,17 @@ def DeleteInstallment(request, installment_id):
         return redirect("dashboard")
 
     deal = installment.deal
+
+    # Soft delete related commissions
+    commissions = installment.commissions.filter(is_deleted=False)
+
+    for commission in commissions:
+        commission.soft_delete()
+
+    # Soft delete installment
     installment.soft_delete()
 
+    # Update deal payment status
     deal.update_payment_status()
 
     return redirect("ViewLead")
@@ -696,3 +708,28 @@ def AddSalesTarget(request, userId):
         "current_year": datetime.now().year,
         "next_url": next_url
     })
+
+
+@login_required
+def add_call_log(request, lead_id):
+
+    lead = get_object_or_404(Lead, id=lead_id)
+
+    if request.method == "POST":
+
+        CallLog.objects.create(
+            lead=lead,
+            user=request.user,
+            call_type=request.POST.get("call_type"),
+            call_status=request.POST.get("call_status"),
+            call_duration=request.POST.get("call_duration") or None,
+            notes=request.POST.get("notes"),
+            next_followup_date=request.POST.get("next_followup_date") or None,
+        )
+
+    next_url = request.GET.get("next")
+
+    if next_url:
+        return redirect(next_url)
+
+    return redirect("ViewLead")
