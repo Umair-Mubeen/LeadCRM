@@ -715,19 +715,34 @@ def add_call_log(request, lead_id):
 
     lead = get_object_or_404(Lead, id=lead_id)
 
+    call_id = request.GET.get("edit")
+
     if request.method == "POST":
 
-        CallLog.objects.create(
-            lead=lead,
-            user=request.user,
-            call_type=request.POST.get("call_type"),
-            call_status=request.POST.get("call_status"),
-            call_duration=request.POST.get("call_duration") or None,
-            notes=request.POST.get("notes"),
-            next_followup_date=request.POST.get("next_followup_date") or None,
-        )
+        if call_id:
+            call = get_object_or_404(CallLog, id=call_id)
+            call.call_type = request.POST.get("call_type")
+            call.call_status = request.POST.get("call_status")
+            call.call_duration = request.POST.get("call_duration")
+            call.notes = request.POST.get("notes")
+            call.next_followup_date = request.POST.get("next_followup_date")
+            call.updated_by = request.user
+
+            call.save()
+        else:
+
+            CallLog.objects.create(
+                lead=lead,
+                user=request.user,
+                call_type=request.POST.get("call_type"),
+                call_status=request.POST.get("call_status"),
+                call_duration=request.POST.get("call_duration") or None,
+                notes=request.POST.get("notes"),
+                next_followup_date=request.POST.get("next_followup_date") or None,
+            )
 
     next_url = request.GET.get("next")
+    print('next_url :-', next_url)
 
     if next_url:
         return redirect(next_url)

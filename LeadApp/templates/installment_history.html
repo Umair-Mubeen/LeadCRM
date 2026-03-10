@@ -1,115 +1,116 @@
-{% if lead.deal %}
+<div class="card shadow-sm mb-4 border-0">
 
-                          <div class="card border-0 shadow-sm mb-4">
-                            <div class="card-body">
-                              <h6 class="fw-bold text-primary mb-3">
-                                <i class="bi bi-clock-history"></i> Payment
-                                Installment History
-                              </h6>
+<div class="card-header bg-white d-flex justify-content-between align-items-center border-bottom">
 
-                              {% if lead.deal.installments.all %}
+<h6 class="fw-bold mb-0 text-dark">
+<i class="bi bi-cash-coin text-success me-2"></i> Installments
+</h6>
 
-                              <div class="table-responsive">
-                                <table
-                                  class="table table-sm table-bordered align-middle"
-                                >
-                                  <thead class="table-light">
-                                    <tr>
-                                      <th>#</th>
-                                      <th>Payment Date</th>
-                                      <th>Amount</th>
-                                      <th>Note</th>
-                                      <th>Added By</th>
+<div class="d-flex gap-2">
 
-                                      {% if request.user.profile.is_admin %}
-                                      <th width="120">Actions</th>
-                                      {% endif %}
-                                    </tr>
-                                  </thead>
+{% if lead.deal.payment_status == "paid" %}
+<span class="badge bg-success">Deal Paid</span>
+{% endif %}
 
-                                  <tbody>
-                                    {% for installment in lead.deal.installments.all %}
+{% if lead.deal and request.user.profile.is_admin %}
+{% if lead.deal.payment_status != "paid" %}
 
-                                    <tr>
-                                      <td>{{ forloop.counter }}</td>
+<a class="btn btn-sm btn-success"
+href="{% url 'AddInstallment' lead.deal.id %}?next={{ request.get_full_path }}#collapse{{ lead.id }}">
+<i class="bi bi-plus"></i> Add Payment
+</a>
 
-                                      <td>
-                                        {{ installment.payment_date|date:"d M Y"}}
-                                      </td>
+{% endif %}
+{% endif %}
 
-                                      <td class="text-success fw-bold">
-                                        ${{ installment.amount|floatformat:2 }}
-                                      </td>
+</div>
 
-                                      <td>
-                                        {{ installment.note|default:"—" }}
-                                      </td>
+</div>
 
-                                      <td>
-                                        {{installment.created_by.username|default:"System"}}
-                                      </td>
 
-                                      {% if request.user.profile.is_admin %}
+<div class="card-body p-0">
 
-                                      <td>
-                                        {% if not lead.deal.is_paid %}
+<table class="table table-hover align-middle mb-0">
 
-                                        <a
-                                          href="{% url 'EditInstallment' installment.id %}?next={{ request.get_full_path|urlencode }}"
-                                          class="btn btn-sm btn-outline-primary"
-                                          title="Edit"
-                                        >
-                                          <i class="bi bi-pencil-square"></i>
-                                        </a>
+<thead class="table-light">
 
-                                        <a
-                                          href="{% url 'DeleteInstallment' installment.id %}"
-                                          class="btn btn-sm btn-outline-danger"
-                                          title="Delete"
-                                          onclick="
-                                            return confirm(
-                                              'Are you sure you want to delete this installment?',
-                                            );
-                                          "
-                                        >
-                                          <i class="bi bi-trash"></i>
-                                        </a>
+<tr class="small text-muted">
+<th>Date</th>
+<th>Amount</th>
+<th>Created By</th>
+<th>Notes</th>
+<th class="text-center" width="100">Action</th>
+</tr>
 
-                                        {% else %}
+</thead>
 
-                                        <span class="badge bg-secondary"
-                                          >Locked</span
-                                        >
+<tbody>
 
-                                        {% endif %}
-                                      </td>
+{% for ins in lead.deal.installments.all %}
 
-                                      {% endif %}
-                                    </tr>
+<tr>
 
-                                    {% endfor %}
-                                  </tbody>
+<td>
+<span class="text-muted">{{ ins.payment_date }}</span>
+</td>
 
-                                  <tfoot class="table-light">
-                                    <tr>
-                                      <th colspan="2">Total Paid</th>
+<td class="fw-bold text-success">
+${{ ins.amount }}
+</td>
 
-                                      <th colspan="4" class="text-success">
-                                        ${{ lead.deal.amount_paid|floatformat:2}}
-                                      </th>
-                                    </tr>
-                                  </tfoot>
-                                </table>
-                              </div>
+<td>
+<span class="badge bg-light text-dark">
+{{ ins.created_by }}
+</span>
+</td>
 
-                              {% else %}
+<td class="text-muted">
+{{ ins.note|default:"-" }}
+</td>
 
-                              <p class="text-muted">
-                                No installments added yet.
-                              </p>
+<td class="text-center">
 
-                              {% endif %}
-                            </div>
-                          </div>
+{% if request.user.profile.is_admin %}
+{% if lead.deal.payment_status != "paid" %}
 
-                          {% endif %} 
+<a class="btn btn-sm btn-outline-primary"
+href="{% url 'EditInstallment' ins.id %}?next={{ request.get_full_path }}#collapse{{ lead.id }}"
+title="Edit Payment">
+<i class="bi bi-pencil"></i>
+</a>
+
+{% else %}
+
+<a class="btn btn-sm btn-outline-secondary disabled"
+title="Deal already paid">
+<i class="bi bi-lock"></i>
+</a>
+
+{% endif %}
+{% endif %}
+
+</td>
+
+</tr>
+
+{% empty %}
+
+<tr>
+<td colspan="5" class="text-center py-4 text-muted">
+
+<i class="bi bi-wallet2 fs-4 d-block mb-2"></i>
+
+No payments recorded yet
+
+</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>

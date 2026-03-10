@@ -714,6 +714,16 @@ class CallLog(SoftDeleteModel):
         auto_now_add=True
     )
 
+   
+    updated_at = models.DateTimeField(auto_now=True)
+
+    updated_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="calls_updated"
+    )
     def save(self, *args, **kwargs):
 
         super().save(*args, **kwargs)

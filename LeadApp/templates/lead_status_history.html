@@ -1,40 +1,67 @@
+<div class="card shadow-sm mb-4 border-0">
 
-<div class="card border-0 shadow-sm">
+<div class="card-header bg-white border-bottom">
 
-<div class="card-body">
-
-<h6 class="fw-bold text-danger mb-3">
-<i class="bi bi-clock-history"></i> Status History
+<h6 class="fw-bold mb-0 text-dark">
+<i class="bi bi-clock-history text-primary me-2"></i> Status History
 </h6>
 
-{% for s in lead.status_history.all %}
+</div>
 
-<div class="mb-2">
 
-<small>
+<div class="card-body p-0">
 
-<strong>{{ s.old_status|capfirst }}</strong>
-→
-<strong>{{ s.new_status|capfirst }}</strong>
+<ul class="list-group list-group-flush">
 
-<br>
+{% for h in lead.status_history.all %}
 
-{{ s.changed_by.username }}
-•
-{{ s.changed_at|date:"d M Y H:i" }}
+<li class="list-group-item d-flex justify-content-between align-items-center">
 
-</small>
+<div class="d-flex align-items-center gap-2">
+
+<span class="badge bg-secondary-subtle text-secondary border">
+{{ h.old_status }}
+</span>
+
+<i class="bi bi-arrow-right text-muted"></i>
+
+<span class="badge bg-primary-subtle text-primary border">
+{{ h.new_status }}
+</span>
 
 </div>
+
+
+<div class="text-end">
+
+<small class="text-muted d-block">
+{{ h.changed_at|date:"Y-m-d H:i" }}
+</small>
+
+{% if h.changed_by %}
+<small class="text-muted">
+by {{ h.changed_by }}
+</small>
+{% endif %}
+
+</div>
+
+</li>
 
 {% empty %}
 
-<p class="text-muted">No status changes recorded</p>
+<li class="list-group-item text-center text-muted py-4">
+
+<i class="bi bi-clock-history fs-4 d-block mb-2"></i>
+
+No status history yet
+
+</li>
 
 {% endfor %}
 
-</div>
+</ul>
 
 </div>
 
-
+</div>

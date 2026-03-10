@@ -1,0 +1,105 @@
+{% if lead.is_converted %}
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+      <h6 class="fw-bold text-success mb-0">
+        <i class="bi bi-cash-stack"></i> Deal Summary
+      </h6>
+
+      {% if request.user.profile.is_admin %}
+
+        {% if lead.deal %}
+
+            {% if not lead.deal.is_paid %}
+
+            <div>
+              <a
+                href="{% url 'CreateDeal' lead.id %}?next={{ request.get_full_path|urlencode }}"
+                class="btn btn-sm btn-outline-success"
+              >
+                <i class="bi bi-pencil-square"></i> Update Deal
+              </a>
+
+              <a
+                href="{% url 'AddInstallment' lead.deal.id %}?next={{ request.get_full_path|urlencode }}"
+                class="btn btn-sm btn-outline-primary"
+              >
+                <i class="bi bi-plus-circle"></i> Add Payment
+              </a>
+            </div>
+
+            {% else %}
+
+            <span class="badge bg-success">
+              Deal Fully Paid
+            </span>
+
+            {% endif %}
+
+        {% else %}
+
+        <a
+          href="{% url 'CreateDeal' lead.id %}?next={{ request.get_full_path|urlencode }}"
+          class="btn btn-sm btn-success"
+        >
+          <i class="bi bi-plus-circle"></i> Add Deal
+        </a>
+
+        {% endif %}
+
+      {% endif %}
+
+    </div>
+
+    {% if lead.deal %}
+
+    <div class="row">
+
+      <div class="col-md-4">
+        <strong>Total Deal</strong>
+        <p class="text-success fw-bold">
+          ${{ lead.deal.deal_value|floatformat:2 }}
+        </p>
+      </div>
+
+      <div class="col-md-4">
+        <strong>Paid</strong>
+        <p class="text-primary fw-bold">
+          ${{ lead.deal.amount_paid|floatformat:2 }}
+        </p>
+      </div>
+
+      <div class="col-md-4">
+        <strong>Remaining</strong>
+        <p class="text-danger fw-bold">
+          ${{ lead.deal.remaining_amount|floatformat:2 }}
+        </p>
+      </div>
+
+    </div>
+
+    <div class="progress mt-2" style="height:20px">
+
+      <div
+        class="progress-bar bg-success"
+        style="width:{{ lead.deal.payment_percentage }}%"
+      >
+        {{ lead.deal.payment_percentage }}%
+      </div>
+
+    </div>
+
+    <p class="mt-3">
+      <strong>Closing Date:</strong>
+      {{ lead.deal.closing_date }}
+    </p>
+
+    {% endif %}
+
+  </div>
+</div>
+
+{% endif %}

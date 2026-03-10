@@ -1,0 +1,238 @@
+<style>
+    .timeline{
+list-style:none;
+padding:0;
+position:relative;
+}
+
+.timeline:before{
+content:"";
+position:absolute;
+left:20px;
+width:2px;
+background:#dee2e6;
+top:0;
+bottom:0;
+}
+
+.timeline li{
+position:relative;
+margin-bottom:20px;
+}
+
+.timeline-badge{
+position:absolute;
+left:10px;
+width:20px;
+height:20px;
+border-radius:50%;
+}
+
+.timeline-panel{
+margin-left:40px;
+background:#fff;
+padding:10px;
+border-radius:6px;
+border:1px solid #eee;
+}
+</style>
+<tr class="collapse-row">
+<td colspan="12" class="p-0">
+
+<div id="collapse{{ lead.id }}" class="collapse" data-bs-parent="#leadAccordion">
+
+<div class="p-4 bg-white border rounded">
+
+<!-- HEADER -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+<div>
+<h5 class="fw-bold mb-0">{{ lead.full_name }}</h5>
+<small class="text-muted">{{ lead.mobile_number }}</small>
+</div>
+
+<div>
+
+<span class="badge bg-{{ lead.get_status_badge }}">
+{{ lead.get_status_display }}
+</span>
+
+{% if lead.is_converted %}
+<span class="badge bg-success">Converted</span>
+{% endif %}
+
+</div>
+
+</div>
+
+<!-- GRID -->
+<div class="row">
+
+<!-- LEFT COLUMN -->
+<div class="col-md-8">
+
+<!-- ACTIVITY TIMELINE -->
+<div class="card shadow-sm mb-4">
+
+<div class="card-header bg-light">
+<h6 class="mb-0 fw-bold">
+<i class="bi bi-clock-history"></i> Activity Timeline
+</h6>
+</div>
+
+<div class="card-body">
+
+<ul class="timeline">
+
+<!-- CALLS -->
+{% for call in lead.call_logs.all %}
+
+<li>
+
+<div class="timeline-badge bg-primary">
+<i class="bi bi-telephone"></i>
+</div>
+
+<div class="timeline-panel">
+
+<strong>Call Logged</strong>
+
+<span class="text-muted float-end small">
+{{ call.created_at|date:"Y-m-d H:i" }}
+</span>
+
+<p class="mb-0 mt-2">
+Duration: {{ call.call_duration }} sec
+</p>
+
+<p class="text-muted mb-0">
+{{ call.notes }}
+</p>
+
+
+
+</div>
+
+</li>
+
+{% endfor %}
+
+<!-- FOLLOWUPS -->
+{% for f in lead.lead_followups.all %}
+
+<li class="timeline-inverted">
+
+<div class="timeline-badge bg-warning">
+<i class="bi bi-chat-left-text"></i>
+</div>
+
+<div class="timeline-panel">
+
+<strong>Followup Added</strong>
+
+<span class="text-muted float-end small">
+{{ f.created_at|date:"Y-m-d H:i" }}
+</span>
+
+<p class="mb-0 mt-2">
+{{ f.note }}
+</p>
+
+</div>
+
+</li>
+
+{% endfor %}
+
+<!-- DEAL -->
+{% if lead.deal %}
+
+<li>
+
+<div class="timeline-badge bg-success">
+<i class="bi bi-cash-stack"></i>
+</div>
+
+<div class="timeline-panel">
+
+<strong>Deal Created</strong>
+
+<span class="text-muted float-end small">
+{{ lead.deal.created_at|date:"Y-m-d" }}
+</span>
+
+<p class="mb-0 mt-2">
+Deal Value: ${{ lead.deal.deal_value }}
+</p>
+
+</div>
+
+</li>
+
+{% endif %}
+
+</ul>
+
+</div>
+</div>
+
+</div>
+
+
+<!-- RIGHT COLUMN -->
+<div class="col-md-4">
+
+<!-- LEAD INFO -->
+<div class="card shadow-sm mb-4">
+
+<div class="card-header bg-light">
+<h6 class="fw-bold mb-0">
+<i class="bi bi-person"></i> Lead Information
+</h6>
+</div>
+
+<div class="card-body">
+
+<p><strong>Email:</strong> {{ lead.email|default:"—" }}</p>
+
+<p><strong>Source:</strong> {{ lead.get_source_display }}</p>
+
+<p><strong>Budget:</strong> {{ lead.budget|default:"—" }}</p>
+
+<p>
+<strong>Verified:</strong>
+
+<span class="{% if lead.verified == 'verified' %}badge bg-success{% else %}badge bg-danger{% endif %}">
+{{ lead.verified }}
+</span>
+
+</p>
+
+</div>
+
+</div>
+
+
+<!-- DEAL SUMMARY -->
+{% include 'lead_deal_section.html' with lead=lead %}
+
+</div>
+
+</div>
+
+
+<!-- OTHER MODULES -->
+{% include 'lead_call_history.html' with lead=lead %}
+
+{% include 'installment_history.html' with lead=lead %}
+
+{% include 'lead_followup.html' with lead=lead %}
+
+{% include 'lead_status_history.html' with lead=lead %}
+
+</div>
+
+</div>
+
+</td>
+</tr>
