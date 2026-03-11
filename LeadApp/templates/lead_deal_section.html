@@ -1,5 +1,59 @@
 {% if lead.is_converted %}
 
+<div class="card shadow-sm mb-3 border-0">
+
+<div class="card-body">
+
+<div class="row text-center">
+
+<div class="col-md-3">
+<div class="border rounded p-2">
+<small class="text-muted d-block">Deal Value</small>
+<h6 class="fw-bold text-dark mb-0">
+${{ lead.deal.deal_value }}
+</h6>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="border rounded p-2">
+<small class="text-muted d-block">Paid</small>
+<h6 class="fw-bold text-success mb-0">
+${{ lead.deal.amount_paid|floatformat:2 }}
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="border rounded p-2">
+<small class="text-muted d-block">Remaining</small>
+<h6 class="fw-bold text-danger mb-0">
+     ${{ lead.deal.remaining_amount|floatformat:2 }}
+</h6>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="border rounded p-2">
+<small class="text-muted d-block">Status</small>
+
+{% if lead.deal.payment_status == "paid" %}
+<span class="badge bg-success">Paid</span>
+
+{% elif lead.deal.payment_status == "partial" %}
+<span class="badge bg-warning text-dark">Partial</span>
+
+{% else %}
+<span class="badge bg-secondary">Pending</span>
+{% endif %}
+
+</div>
+</div>
+
+</div>
+
+</div>
+
+</div>
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-body">
 

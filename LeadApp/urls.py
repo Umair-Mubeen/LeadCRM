@@ -6,7 +6,7 @@ urlpatterns = [
 path('', views.index, name='index'),
  path('login/', views.login_view, name='login'),
 path('logout/', views.logout_view, name='logout'),
-path('dashboard/', views.dashboard, name='dashboard'),
+path('dashboard', views.dashboard, name='dashboard'),
 
 
 path("AddEditLead/", views.AddEditLead, name="AddLead"),
@@ -29,5 +29,7 @@ path("commission-ledger/", views.CommissionLedger, name="commission-ledger"),
 path("commission-paid/<int:pk>/", views.mark_commission_paid, name="mark_commission_paid"),
 path("commission-rollback/<int:pk>/", views.commission_rollback, name="commission-rollback"),
 path("AddSalesTarget/<int:userId>/", views.AddSalesTarget, name="AddSalesTarget"),
+path("SalesLeaderBoard", views.SalesLeaderBoard, name="SalesLeaderBoard"),
+
 path("add-call-log/<int:lead_id>/", views.add_call_log, name="add-call-log"),
 ]

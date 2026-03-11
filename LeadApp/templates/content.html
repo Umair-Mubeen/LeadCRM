@@ -229,9 +229,76 @@
           </div>
         </div>
         <!-- include graph -->
-
-        
       </div>
+
+      <!-- ===================== SALES TARGET ===================== -->
+
+      <div class="dashboard-section-title mt-4">Sales Target</div>
+
+      <div class="row g-3">
+        <div class="col-md-3">
+          <div class="info-box dashboard-card shadow-sm">
+            <span class="info-box-icon bg-danger text-white">
+              <i class="bi bi-bullseye"></i>
+            </span>
+
+            <div class="info-box-content">
+              <span class="info-box-text text-dark">Monthly Target</span>
+              <span class="info-box-number text-dark">
+                ${{ monthly_target|floatformat:2 }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="info-box dashboard-card shadow-sm">
+            <span class="info-box-icon bg-success text-white">
+              <i class="bi bi-graph-up-arrow"></i>
+            </span>
+
+            <div class="info-box-content">
+              <span class="info-box-text text-dark">Achieved</span>
+              <span class="info-box-number text-success">
+                ${{ achieved_sales|floatformat:2 }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="info-box dashboard-card shadow-sm">
+            <span class="info-box-icon bg-warning text-dark">
+              <i class="bi bi-hourglass-split"></i>
+            </span>
+
+            <div class="info-box-content">
+              <span class="info-box-text text-dark">Remaining</span>
+              <span class="info-box-number text-warning">
+                ${{ remaining_target|floatformat:2 }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="info-box dashboard-card shadow-sm">
+            <span class="info-box-icon bg-primary text-white">
+              <i class="bi bi-percent"></i>
+            </span>
+
+            <div class="info-box-content">
+              <span class="info-box-text text-dark">Progress</span>
+              <span class="info-box-number text-primary">
+                {{ target_progress }}%
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      
     </div>
   </div>
 </main>

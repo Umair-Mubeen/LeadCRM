@@ -238,24 +238,26 @@
 </select>
 </div>
 <!-- ASSIGN USERS -->
-<div class="col-md-6">
-<label class="form-label">Assign To *</label>
+     {% if request.user.profile.is_admin or request.user.profile.is_lgs %}
 
-<select class="form-select"
-        name="userId"
-        multiple
-        required>
-{% for u in users %}
-<option value="{{ u.id }}"
-{% if lead and u in lead.assigned_to.all %}selected{% endif %}>
-{{ u.username }}
-</option>
-{% endfor %}
-<option value="0"> Open </option>
+        <div class="col-md-6">
+        <label class="form-label">Assign To *</label>
 
-</select>
-</div>
+        <select class="form-select"
+                name="userId"
+                multiple
+                required>
+        {% for u in users %}
+        <option value="{{ u.id }}"
+        {% if lead and u in lead.assigned_to.all %}selected{% endif %}>
+        {{ u.username }}
+        </option>
+        {% endfor %}
+        <option value="0"> Open </option>
 
+        </select>
+        </div>
+     {% endif %}   
 </div>
 </div>
 

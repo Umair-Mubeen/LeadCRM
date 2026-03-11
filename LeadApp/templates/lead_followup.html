@@ -1,3 +1,5 @@
+{% if request.user.profile.is_admin or  request.user.profile.is_salesman %}
+
 <div class="card shadow-sm mb-4 border-0">
 
 <div class="card-header bg-white d-flex justify-content-between align-items-center border-bottom">
@@ -8,7 +10,7 @@
 
 <div>
 
-{% if lead.deal.payment_status != "paid" %}
+{% if lead.deal.payment_status != "paid"  %}
 
 <a class="btn btn-sm btn-primary"
 href="{% url 'AddEditFollowup' lead.id %}?next={{ request.get_full_path }}#collapse{{ lead.id }}">
@@ -108,3 +110,5 @@ No followups added yet
 </div>
 
 </div>
+
+{% endif %}

@@ -37,13 +37,16 @@
                 <div class="col-sm-6">
                   <ol class="breadcrumb float-sm-end">
                     <li class="breadcrumb-item">
-                      <a href="/" style="color: black">Home</a>
+                      <a href="{% url 'dashboard' %}" style="color: black">Home</a>
                     </li>
+                                              {% if request.user.profile.is_admin or  request.user.profile.is_lgs %}
+
                     <li class="breadcrumb-item" aria-current="page">
                       <a href="{% url 'AddLead' %}" style="color: black"
                         >Create Lead
                       </a>
                     </li>
+                    {% endif %}
                   </ol>
                 </div>
               </div>
@@ -147,7 +150,7 @@
                           {% endif %}
 
                           <!-- Followup Admin / LGS / Salesman -->
-                          {% if request.user.profile.is_admin or request.user.profile.is_lgs or request.user.profile.is_salesman %}
+                          {% if request.user.profile.is_admin or  request.user.profile.is_salesman %}
                           
                           <li>
                             <a

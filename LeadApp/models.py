@@ -425,9 +425,7 @@ class Deal(SoftDeleteModel):
 
     @property
     def amount_paid(self):
-        total = self.installments.aggregate(
-            total=models.Sum("amount")
-        )["total"]
+        total = self.installments.aggregate(total=models.Sum("amount"))["total"]
         return total or Decimal("0.00")
     
     @property
