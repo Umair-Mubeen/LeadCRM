@@ -49,6 +49,7 @@ border:1px solid #eee;
 <div>
 <h5 class="fw-bold mb-0">{{ lead.full_name }}</h5>
 <small class="text-muted">{{ lead.mobile_number }}</small>
+
 </div>
 
 <div>
@@ -104,6 +105,17 @@ border:1px solid #eee;
 <p class="mb-0 mt-2">
 Duration: {{ call.call_duration }} sec
 </p>
+<div class="mt-1 small text-muted">
+
+<i class="bi bi-person"></i>
+
+{% if call.updated_by %}
+{{ call.updated_by.username }}
+{% else %}
+System
+{% endif %}
+
+</div>
 
 <p class="text-muted mb-0">
 {{ call.notes }}
@@ -134,6 +146,11 @@ Duration: {{ call.call_duration }} sec
 {{ f.created_at|date:"Y-m-d H:i" }}
 </span>
 
+<div class="mt-1 small text-muted">
+<i class="bi bi-person"></i>
+{{ f.created_by.get_full_name|default:f.created_by.username }}
+</div>
+
 <p class="mb-0 mt-2">
 {{ f.note }}
 </p>
@@ -141,7 +158,6 @@ Duration: {{ call.call_duration }} sec
 </div>
 
 </li>
-
 {% endfor %}
 
 <!-- DEAL -->
@@ -198,7 +214,38 @@ Deal Value: ${{ lead.deal.deal_value }}
 <p><strong>Source:</strong> {{ lead.get_source_display }}</p>
 
 <p><strong>Budget:</strong> {{ lead.budget|default:"—" }}</p>
+<p>
 
+<strong>Assigned To:</strong>
+
+{% if lead.assigned_to.all %}
+    
+    {% for user in lead.assigned_to.all %}
+        <span class="badge bg-primary">{{ user.username }}</span>
+    {% endfor %}
+
+{% else %}
+
+    <span class="text-muted">Open</span>
+
+{% endif %}
+
+
+{% if request.user.profile.is_admin %}
+
+<a
+class="btn btn-sm btn-outline-primary ms-2"
+href="{% url 'EditLead' lead.id %}?next={{ request.get_full_path }}#collapse{{ lead.id }}"
+title="Edit Assignment"
+>
+
+<i class="bi bi-pencil"></i> Edit
+
+</a>
+
+{% endif %}
+
+</p>
 <p>
 <strong>Verified:</strong>
 
@@ -207,6 +254,8 @@ Deal Value: ${{ lead.deal.deal_value }}
 </span>
 
 </p>
+
+<p><strong>Lead Requirements :</strong> {{ lead.requirements|default:"—" }}</p>
 
 </div>
 

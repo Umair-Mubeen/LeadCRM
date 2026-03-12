@@ -12,7 +12,7 @@ from django.db.models import Prefetch
 from django.db.models.functions import TruncMonth
 from decimal import Decimal
 from .graph import RevenueDashboard, MonthlySalesTarget, SalesLeaderboard, MonthlyTargetAchieved
-
+from django.db.models import Q
 from django.db import transaction
 from django.contrib import messages
 from django.urls import reverse
@@ -78,7 +78,7 @@ def dashboard(request):
         total_users = User.objects.count() if is_admin else None
 
     else:
-        leads = Lead.objects.filter(is_deleted=False, assigned_to=user)
+        leads = Lead.objects.filter(is_deleted=False)
 
         followups = LeadFollowUp.objects.filter(
             lead__assigned_to=user,
@@ -254,11 +254,12 @@ def ViewLead(request):
     # Base queryset
     if profile.is_admin or profile.is_lgs:
         base_queryset = Lead.objects.filter(is_deleted=False)
+
     else:
         base_queryset = Lead.objects.filter(
-            is_deleted=False,
-            assigned_to=user
-        )
+            Q(is_deleted=False),
+            Q(assigned_to=user) | Q(assigned_to__isnull=True)
+        ).distinct()
 
     # Priority filter
     if priority_filter:
@@ -281,7 +282,7 @@ def ViewLead(request):
     return render(request, "view_lead.html", {"leads": leads})
 
 
-@role_required([UserProfile.ROLE_ADMIN, UserProfile.ROLE_LGS])
+@role_required([UserProfile.ROLE_ADMIN, UserProfile.ROLE_LGS, UserProfile.ROLE_SALESMAN])
 @transaction.atomic
 def AddEditLead(request, leadId=None):
 
@@ -787,10 +788,12 @@ def add_call_log(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
 
     call_id = request.GET.get("edit")
-
+    next_url = request.GET.get("next")
+    
     if request.method == "POST":
 
         if call_id:
+            
             call = get_object_or_404(CallLog, id=call_id)
             call.call_type = request.POST.get("call_type")
             call.call_status = request.POST.get("call_status")
@@ -798,8 +801,8 @@ def add_call_log(request, lead_id):
             call.notes = request.POST.get("notes")
             call.next_followup_date = request.POST.get("next_followup_date")
             call.updated_by = request.user
-
             call.save()
+            
         else:
 
             CallLog.objects.create(
@@ -812,7 +815,6 @@ def add_call_log(request, lead_id):
                 next_followup_date=request.POST.get("next_followup_date") or None,
             )
 
-    next_url = request.GET.get("next")
     print('next_url :-', next_url)
 
     if next_url:

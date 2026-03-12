@@ -117,11 +117,22 @@
 
 {% for value,label in STATUS_CHOICES %}
 
-    {% if value != "won" or request.user.profile.is_admin %}
+    {% if request.user.profile.is_lgs %}
+
+        {% if value == "new" %}
         <option value="{{ value }}"
         {% if lead and lead.status == value %}selected{% endif %}>
             {{ label }}
         </option>
+        {% endif %}
+
+    {% else %}
+
+        <option value="{{ value }}"
+        {% if lead and lead.status == value %}selected{% endif %}>
+            {{ label }}
+        </option>
+
     {% endif %}
 
 {% endfor %}
@@ -238,7 +249,7 @@
 </select>
 </div>
 <!-- ASSIGN USERS -->
-     {% if request.user.profile.is_admin or request.user.profile.is_lgs %}
+     {% if request.user.profile.is_admin %}
 
         <div class="col-md-6">
         <label class="form-label">Assign To *</label>

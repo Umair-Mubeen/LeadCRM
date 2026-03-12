@@ -34,12 +34,15 @@ onclick="setCallLogAction(this)">
 <thead class="table-light small text-muted">
 
 <tr>
-<th width="220">Date</th>
+<th>Date</th>
 <th>User</th>
 <th>Status</th>
-<th width="120">Duration</th>
+<th>Call Type</th>
+
+<th>Duration</th>
 <th>Notes</th>
-<th width="70" class="text-center">Action</th>
+<th>Next Followup Date</th>
+<th class="text-center">Action</th>
 </tr>
 
 </thead>
@@ -106,7 +109,7 @@ Busy
 
 </td>
 
-
+<td>{{call.call_type}}</td>
 <td>
 
 {% if call.call_duration %}
@@ -128,6 +131,13 @@ Busy
 title="{{ call.notes }}">
 
 {{ call.notes|truncatechars:45 }}
+
+</td>
+
+<td>
+<span class="badge bg-warning-subtle text-dark border">
+<i class="bi bi-calendar-event me-1"></i> Next Followup: {{call.next_followup_date}}
+</span>
 
 </td>
 
@@ -173,7 +183,7 @@ title="Deal already paid">
 
 <tr>
 
-<td colspan="6" class="text-center text-muted py-4">
+<td colspan="8" class="text-center text-muted py-4">
 
 <i class="bi bi-telephone-x fs-4 d-block mb-2"></i>
 

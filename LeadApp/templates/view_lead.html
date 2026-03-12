@@ -137,7 +137,7 @@
 
                         <ul class="dropdown-menu">
                           <!-- Edit only Admin & LGS -->
-                          {% if request.user.profile.is_admin or  request.user.profile.is_lgs %}
+                          {% if request.user.profile.is_admin or  request.user.profile.is_lgs or  request.user.profile.is_salesman  %}
                          
                           <li>
                             <a

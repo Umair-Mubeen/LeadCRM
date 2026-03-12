@@ -11,8 +11,7 @@
       </div>
 
       <div class="modal-body">
-        {{lead.}}
-
+       
         <form method="POST" id="callLogForm">
           {% csrf_token %}
 
@@ -85,3 +84,37 @@
     </div>
   </div>
 </div>
+
+<script>
+function setCallLogAction(button){
+
+    let leadId = button.dataset.leadId;
+    let callId = button.dataset.callId;
+    let nextUrl = button.dataset.next;
+
+    let form = document.getElementById("callLogForm");
+
+    form.action = "/add-call-log/" + leadId + "/?edit=" + callId + "&next=" + encodeURIComponent(nextUrl);
+
+}
+</script>
+
+<script>
+function editCallLog(button){
+
+    let leadId = button.dataset.leadId;
+    let callId = button.dataset.callId;
+        let nextUrl = button.dataset.next;
+
+    // set form action
+    let form = document.getElementById("callLogForm");
+    form.action = "/add-call-log/" + leadId + "/?edit=" + callId + "&next=" + encodeURIComponent(nextUrl);
+    // fill fields
+    document.getElementById("call_type").value = button.dataset.callType;
+    document.getElementById("call_status").value = button.dataset.callStatus;
+    document.getElementById("call_duration").value = button.dataset.duration;
+    document.getElementById("notes").value = button.dataset.notes;
+    document.getElementById("next_followup_date").value = button.dataset.followup;
+
+}
+</script>
