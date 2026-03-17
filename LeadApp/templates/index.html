@@ -48,8 +48,7 @@
     <div class="app-wrapper">
         {% include 'navbar.html' %}
         {% include 'sidebar.html' %}
-        {% include 'content.html' with monthly_revenue=monthly_revenue lead_funnel=lead_funnel %}
-        
+      {% include "content.html" with monthly_revenue=monthly_revenue lead_funnel=lead_funnel months=months leaderboard=leaderboard followups_today_list=followups_today_list %}  
         {% include 'footer.html' %}
         
         

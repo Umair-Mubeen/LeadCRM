@@ -1,4 +1,4 @@
-{% if request.user.profile.is_admin or  request.user.profile.is_salesman %}
+{% if request.user.profile.is_admin or request.user.profile.is_salesman %}
 
 <div class="card shadow-sm mb-4 border-0">
 
@@ -51,24 +51,28 @@ href="{% url 'AddEditFollowup' lead.id %}?next={{ request.get_full_path }}#colla
 </div>
 
 
-{% if request.user.profile.is_admin %}
+{% if request.user.profile.is_admin or f.created_by == request.user %}
 
-{% if lead.deal.payment_status != "paid" %}
+    {% if lead.deal.payment_status != "paid" %}
 
-<a class="btn btn-sm btn-outline-primary"
-href="{% url 'EditFollowup' lead.id f.id %}?next={{ request.get_full_path }}#collapse{{ lead.id }}"
-title="Edit Followup">
-<i class="bi bi-pencil"></i>
-</a>
+        <a class="btn btn-sm btn-outline-primary"
+        href="{% url 'EditFollowup' lead.id f.id %}?next={{ request.get_full_path }}#collapse{{ lead.id }}"
+        title="Edit Followup">
 
-{% else %}
+        <i class="bi bi-pencil"></i>
 
-<a class="btn btn-sm btn-outline-secondary disabled"
-title="Followup cannot be edited after payment">
-<i class="bi bi-lock"></i>
-</a>
+        </a>
 
-{% endif %}
+    {% else %}
+
+        <a class="btn btn-sm btn-outline-secondary disabled"
+        title="Followup cannot be edited after payment">
+
+        <i class="bi bi-lock"></i>
+
+        </a>
+
+    {% endif %}
 
 {% endif %}
 

@@ -11,6 +11,35 @@
           <nav class="mt-2">
             <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="navigation" aria-label="Main navigation" data-accordion="false" id="navigation">
               {% if user.is_superuser and user.profile.role != "LGS" %}
+                   
+              <li class="nav-item">
+                <a href="#" class="nav-link">
+                  <i class="nav-icon bi bi-speedometer"></i>
+                  <p>
+                    Expense Manager
+                    <i class="nav-arrow bi bi-chevron-right"></i>
+                  </p>
+                </a>
+                <ul class="nav nav-treeview" role="navigation" aria-label="Navigation 4">
+                  <li class="nav-item">
+                    <a href="{% url 'AddExpense' %}" class="nav-link">
+                      <i class="nav-icon bi bi-circle"></i>
+                      <p>Create Expenses</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="{% url 'ViewExpenses' %}" class="nav-link">
+                      <i class="nav-icon bi bi-circle"></i>
+                      <p>Manage Expenses</p>
+                    </a>
+                  </li>
+                  
+                 
+                </ul>
+
+                
+              </li>
+              
               <li class="nav-item">
                 <a href="#" class="nav-link">
                   <i class="nav-icon bi bi-speedometer"></i>
@@ -81,6 +110,8 @@
                 </a>
                 <ul class="nav nav-treeview" role="navigation" aria-label="Navigation 4">
                                {% if user.is_superuser %}
+
+                               
                   <li class="nav-item">
                     <a href="{% url 'AddLead' %}" class="nav-link">
                       <i class="nav-icon bi bi-circle"></i>

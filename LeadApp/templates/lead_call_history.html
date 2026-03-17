@@ -141,37 +141,43 @@ title="{{ call.notes }}">
 
 </td>
 
-
 <td class="text-center">
 
-{% if lead.deal.payment_status != "paid" %}
+{% if request.user.profile.is_admin or call.user == request.user %}
 
-<a class="btn btn-sm btn-outline-primary"
-data-bs-toggle="modal"
-data-bs-target="#callLogModal"
-data-call-id="{{ call.id }}"
-data-lead-id="{{ lead.id }}"
-data-call-type="{{ call.call_type }}"
-data-call-status="{{ call.call_status }}"
-data-duration="{{ call.call_duration }}"
-data-notes="{{ call.notes }}"
-data-followup="{{ call.next_followup_date|date:'Y-m-d' }}"
-data-next="{{ request.get_full_path }}#collapse{{ lead.id }}"
-onclick="editCallLog(this)"
-title="Edit Call">
+    {% if lead.deal.payment_status != "paid" %}
 
-<i class="bi bi-pencil"></i>
+        <a class="btn btn-sm btn-outline-primary"
+        data-bs-toggle="modal"
+        data-bs-target="#callLogModal"
+        data-call-id="{{ call.id }}"
+        data-lead-id="{{ lead.id }}"
+        data-call-type="{{ call.call_type }}"
+        data-call-status="{{ call.call_status }}"
+        data-duration="{{ call.call_duration }}"
+        data-notes="{{ call.notes }}"
+        data-followup="{{ call.next_followup_date|date:'Y-m-d' }}"
+        data-next="{{ request.get_full_path }}#collapse{{ lead.id }}"
+        onclick="editCallLog(this)"
+        title="Edit Call">
 
-</a>
+        <i class="bi bi-pencil"></i>
+
+        </a>
+
+    {% else %}
+
+        <span class="text-muted" title="Deal already paid">
+            <i class="bi bi-lock"></i>
+        </span>
+
+    {% endif %}
 
 {% else %}
 
-<a class="btn btn-sm btn-outline-secondary disabled"
-title="Deal already paid">
-
+<span class="text-muted" title="Only creator can edit">
 <i class="bi bi-lock"></i>
-
-</a>
+</span>
 
 {% endif %}
 

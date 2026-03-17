@@ -6,88 +6,86 @@ from decimal import Decimal
 from django.db.models import Sum
 from django.db.models.functions import TruncDate, TruncMonth
 from django.utils import timezone
-from .models import Deal, SalesTarget, DealInstallment
-from django.shortcuts import render, redirect, get_object_or_404
+
+from .models import (
+    Deal,
+    Lead,
+    Commission,
+    SalesTarget,
+    DealInstallment
+)
+
+
+import json
+import calendar
+from datetime import timedelta, date
+
+from django.db.models import Sum
+from django.db.models.functions import TruncDate, TruncMonth
+from django.utils import timezone
+
+from .models import DealInstallment
 
 
 def RevenueDashboard(selected_month=None):
 
-    today = timezone.now().date()
-
+    today = timezone.localdate()
     current_year = today.year
 
-    # ✅ FIX MONTH TYPE
-    if selected_month:
-        try:
-            current_month = int(selected_month)
-        except:
-            current_month = today.month
-    else:
+    try:
+        current_month = int(selected_month) if selected_month else today.month
+    except ValueError:
         current_month = today.month
 
     yesterday = today - timedelta(days=1)
 
-    # ======================
-    # TODAY / YESTERDAY
-    # ======================
 
     today_total = (
-        DealInstallment.objects.filter(
-            payment_date=today
-        ).aggregate(total=Sum("amount"))["total"] or 0
+        DealInstallment.objects
+        .filter(payment_date=today)
+        .aggregate(total=Sum("amount"))
+        .get("total") or 0
     )
 
     yesterday_total = (
-        DealInstallment.objects.filter(
-            payment_date=yesterday
-        ).aggregate(total=Sum("amount"))["total"] or 0
+        DealInstallment.objects
+        .filter(payment_date=yesterday)
+        .aggregate(total=Sum("amount"))
+        .get("total") or 0
     )
-
-    # ======================
-    # THIS MONTH
-    # ======================
 
     this_month_total = (
-        DealInstallment.objects.filter(
+        DealInstallment.objects
+        .filter(
             payment_date__year=current_year,
-            payment_date__month=current_month,
-        ).aggregate(total=Sum("amount"))["total"] or 0
+            payment_date__month=current_month
+        )
+        .aggregate(total=Sum("amount"))
+        .get("total") or 0
     )
-
-    # ======================
-    # THIS YEAR
-    # ======================
 
     this_year_total = (
-        DealInstallment.objects.filter(
-            payment_date__year=current_year,
-        ).aggregate(total=Sum("amount"))["total"] or 0
+        DealInstallment.objects
+        .filter(payment_date__year=current_year)
+        .aggregate(total=Sum("amount"))
+        .get("total") or 0
     )
 
-    # ======================
-    # DAILY GRAPH
-    # ======================
 
-    days_in_month = calendar.monthrange(
-        current_year,
-        current_month
-    )[1]
+    days_in_month = calendar.monthrange(current_year, current_month)[1]
 
     days = []
-    daily_revenue = []
+    daily_revenue = [0] * days_in_month
 
     for d in range(1, days_in_month + 1):
-
         dt = date(current_year, current_month, d)
-
         days.append(dt.strftime("%d %b"))
-        daily_revenue.append(0)
 
     daily_data = (
         DealInstallment.objects
         .filter(
             payment_date__year=current_year,
-            payment_date__month=current_month,
+            payment_date__month=current_month
         )
         .annotate(day=TruncDate("payment_date"))
         .values("day")
@@ -95,17 +93,12 @@ def RevenueDashboard(selected_month=None):
     )
 
     for item in daily_data:
-
         if item["day"]:
-
-            i = item["day"].day - 1
-
-            if i < len(daily_revenue):
-
-                daily_revenue[i] = float(item["total"] or 0)
+            index = item["day"].day - 1
+            daily_revenue[index] = float(item["total"] or 0)
 
     # ======================
-    # MONTHLY GRAPH
+    # MONTHLY GRAPH DATA
     # ======================
 
     months = list(calendar.month_abbr)[1:]
@@ -113,21 +106,20 @@ def RevenueDashboard(selected_month=None):
 
     monthly_data = (
         DealInstallment.objects
-        .filter(
-            payment_date__year=current_year,
-        )
+        .filter(payment_date__year=current_year)
         .annotate(month=TruncMonth("payment_date"))
         .values("month")
         .annotate(total=Sum("amount"))
     )
 
     for item in monthly_data:
-
         if item["month"]:
+            index = item["month"].month - 1
+            monthly_revenue[index] = float(item["total"] or 0)
 
-            i = item["month"].month - 1
-
-            monthly_revenue[i] = float(item["total"] or 0)
+    # ------------------
+    # Return Data
+    # ------------------
 
     return {
 
@@ -145,31 +137,41 @@ def RevenueDashboard(selected_month=None):
     }
 
 
-def MonthlySalesTarget(request):
-    today = timezone.localdate()  # safer than timezone.now()
+
+def MonthlySalesTarget(user):
+
+    today = timezone.localdate()
 
     target = SalesTarget.objects.filter(
-        user=request.user,
+        user=user,
         month=today.month,
         year=today.year
     ).first()
 
     monthly_target = target.target_amount if target else 0
 
-    achieved_sales = Deal.objects.filter(
-        created_by=request.user,
-        payment_status="paid",
-        created_at__year=today.year,
-        created_at__month=today.month
-    ).aggregate(total=Sum("deal_value"))["total"] or 0
+    achieved_sales = (
+        Deal.objects
+        .filter(
+            created_by=user,
+            payment_status="paid",
+            created_at__year=today.year,
+            created_at__month=today.month
+        )
+        .aggregate(total=Sum("deal_value"))["total"] or 0
+    )
 
     remaining_target = max(monthly_target - achieved_sales, 0)
 
     target_progress = 0
+
     if monthly_target > 0:
-        target_progress = round((achieved_sales / monthly_target) * 100)
+        target_progress = round(
+            (achieved_sales / monthly_target) * 100
+        )
 
     return {
+
         "monthly_target": monthly_target,
         "achieved_sales": achieved_sales,
         "remaining_target": remaining_target,
@@ -177,44 +179,43 @@ def MonthlySalesTarget(request):
     }
 
 
-from django.utils import timezone
-from django.db.models import Sum
-from .models import Deal, Commission, SalesTarget
 
 
-def SalesLeaderboard(request):
+def SalesLeaderboard():
 
     today = timezone.localdate()
 
     leaderboard = (
-        Deal.objects.filter(
+        Deal.objects
+        .filter(
             payment_status="paid",
             created_at__year=today.year,
             created_at__month=today.month,
             is_deleted=False
         )
         .values(
-            "lead__assigned_to__id",
+            "lead__assigned_to",
             "lead__assigned_to__username"
         )
-        .annotate(
-            total_sales=Sum("deal_value")
-        )
+        .annotate(total_sales=Sum("deal_value"))
         .order_by("-total_sales")
     )
 
-    # enrich leaderboard rows
     data = []
 
     for row in leaderboard:
 
-        user_id = row["lead__assigned_to__id"]
+        user_id = row["lead__assigned_to"]
 
-        commission = Commission.objects.filter(
-            user_id=user_id,
-            created_at__year=today.year,
-            created_at__month=today.month
-        ).aggregate(total=Sum("amount"))["total"] or 0
+        commission = (
+            Commission.objects
+            .filter(
+                user_id=user_id,
+                created_at__year=today.year,
+                created_at__month=today.month
+            )
+            .aggregate(total=Sum("amount"))["total"] or 0
+        )
 
         target = SalesTarget.objects.filter(
             user_id=user_id,
@@ -225,8 +226,11 @@ def SalesLeaderboard(request):
         target_amount = target.target_amount if target else 0
 
         progress = 0
+
         if target_amount > 0:
-            progress = round((row["total_sales"] / target_amount) * 100)
+            progress = round(
+                (row["total_sales"] / target_amount) * 100
+            )
 
         row["commission"] = commission
         row["target"] = target_amount
@@ -238,61 +242,38 @@ def SalesLeaderboard(request):
 
 
 
-def MonthlyTargetAchieved(request,installment_id,new_amount):
-        
-    today = timezone.localdate()
 
-    installment = get_object_or_404(
-            DealInstallment,
-            id=installment_id,
-            is_deleted=False
-        )
+def LeadFunnel():
 
-    salesman = installment.deal.lead.assigned_to
+    return {
 
+        "lead_funnel": [
 
-    # 🔎 Get monthly target
-    target = SalesTarget.objects.filter(
-        user=salesman,
-        month=today.month,
-        year=today.year
-    ).first()
+            Lead.objects.filter(status="new").count(),
 
-    target_amount = target.target_amount if target else 0
+            Lead.objects.filter(status="contacted").count(),
 
+            Lead.objects.filter(status="qualified").count(),
 
-    # 🔎 Calculate monthly sales
-    monthly_sales = Deal.objects.filter(
-        lead__assigned_to=salesman,
-        payment_status="paid",
-        created_at__year=today.year,
-        created_at__month=today.month,
-        is_deleted=False
-    ).aggregate(total=Sum("deal_value"))["total"] or 0
+            Lead.objects.filter(status="proposal").count(),
+
+            Lead.objects.filter(status="negotiation").count(),
+
+            Lead.objects.filter(status="won").count(),
+
+        ]
+    }
 
 
-    # 🔒 Prevent editing if commission already paid
-    if installment.commissions.filter(is_paid=True).exists():
-        return redirect("ViewLead")
 
 
-    installment.amount = new_amount
-    installment.note = request.POST.get("note")
-    installment.payment_date = request.POST.get("payment_date")
-    installment.save()
+def DashboardData(user):
 
+    context = {}
 
-    # 🎯 Only calculate commission if target achieved
-    if monthly_sales >= target_amount:
+    context.update(RevenueDashboard())
+    context.update(MonthlySalesTarget(user))
+    context.update(SalesLeaderboard())
+    context.update(LeadFunnel())
 
-        for commission in installment.commissions.filter(is_deleted=False):
-
-            commission.amount = (
-                new_amount * commission.percentage
-            ) / Decimal("100")
-
-            commission.save()
-
-
-    # Update deal payment status
-    installment.deal.update_payment_status()
+    return context

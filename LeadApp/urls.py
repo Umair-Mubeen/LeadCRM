@@ -7,6 +7,7 @@ path('', views.index, name='index'),
  path('login/', views.login_view, name='login'),
 path('logout/', views.logout_view, name='logout'),
 path('dashboard', views.dashboard, name='dashboard'),
+path('icon', views.DashboardIcon, name='icon'),
 
 
 path("AddEditLead/", views.AddEditLead, name="AddLead"),
@@ -32,4 +33,10 @@ path("AddSalesTarget/<int:userId>/", views.AddSalesTarget, name="AddSalesTarget"
 path("SalesLeaderBoard", views.SalesLeaderBoard, name="SalesLeaderBoard"),
 
 path("add-call-log/<int:lead_id>/", views.add_call_log, name="add-call-log"),
+
+path("ViewExpenses", views.ViewExpenses, name="ViewExpenses"),
+path("AddEditExpense", views.AddEditExpense, name="AddExpense"),
+path("AddEditExpense/edit/<int:id>/",views.AddEditExpense, name="AddEditExpense"),
+path("expense/delete/<int:id>/", views.DeleteExpense, name="expense_delete"),
+
 ]

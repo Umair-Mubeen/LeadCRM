@@ -1,304 +1,340 @@
-<main class="app-main" id="main" tabindex="-1">
-  <style>
-    .dashboard-card {
-      transition: all 0.2s ease-in-out;
-      cursor: pointer;
-    }
-    .dashboard-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-    }
-    .dashboard-section-title {
-      font-weight: 600;
-      font-size: 18px;
-      margin-bottom: 15px;
-    }
-  </style>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.min.js"></script>
 
-  <div class="app-content-header">
-    <div class="container-fluid">
-      <div class="d-flex justify-content-between align-items-center">
-        <h4 class="mb-0 fw-semibold">📊 CRM Dashboard Overview</h4>
-        <ol class="breadcrumb mb-0">
-          <li class="breadcrumb-item">
-            <a href="{% url 'dashboard' %}" class="text-dark">Home</a>
-          </li>
-          <li class="breadcrumb-item active">Dashboard</li>
-        </ol>
+<main class="app-main">
+  <div class="container-fluid mt-4">
+    <!-- KPI CARDS -->
+    <div class="row">
+      <div class="col-lg-3 col-6">
+        <div class="small-box text-bg-primary">
+          <div class="inner">
+            <h3>{{ total_leads }}</h3>
+            <p>Total Leads</p>
+          </div>
+          <div class="small-box-icon">
+            <i class="bi bi-people"></i>
+          </div>
+        </div>
       </div>
+
+      <div class="col-lg-3 col-6">
+        <div class="small-box text-bg-success">
+          <div class="inner">
+            <h3>{{ deals_won }}</h3>
+            <p>Deals Won</p>
+          </div>
+          <div class="small-box-icon">
+            <i class="bi bi-trophy"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-6">
+        <div class="small-box text-bg-warning">
+          <div class="inner">
+            <h3>${{ revenue|floatformat:0 }}</h3>
+            <p>Total Revenue</p>
+          </div>
+          <div class="small-box-icon">
+            <i class="bi bi-cash-stack"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-6">
+        <div class="small-box text-bg-info">
+          <div class="inner">
+            <h3>{{ followups_today }}</h3>
+            <p>Followups Today</p>
+          </div>
+          <div class="small-box-icon">
+            <i class="bi bi-calendar-check"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title">Lead Funnel</h5>
+          </div>
+
+          <div class="card-body">
+            <div id="leadFunnelChart"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title">Monthly Revenue</h5>
+          </div>
+
+          <div class="card-body">
+            <div id="revenueChart"></div>
+          </div>
+        </div>
+      </div>
+   
     </div>
-  </div>
-
-  <div class="app-content">
-    <div class="container-fluid">
-      <!-- ===================== LEAD STATS ===================== -->
-      <div class="dashboard-section-title">Lead Performance</div>
-
-      <div class="row g-3">
-        <div class="col-md-3">
-          <a href="{% url 'ViewLead' %}" class="text-decoration-none">
-            <div class="info-box dashboard-card shadow-sm">
-              <span class="info-box-icon bg-primary text-white">
-                <i class="bi bi-people-fill"></i>
-              </span>
-              <div class="info-box-content">
-                <span class="info-box-text text-dark">Total Leads</span>
-                <span class="info-box-number text-dark">{{ total_leads }}</span>
-              </div>
-            </div>
-          </a>
-        </div>
-
-        <div class="col-md-3">
-          <div class="info-box dashboard-card shadow-sm">
-            <span class="info-box-icon bg-info text-white">
-              <i class="bi bi-calendar-event-fill"></i>
-            </span>
-            <div class="info-box-content">
-              <span class="info-box-text text-dark">Today Leads</span>
-              <span class="info-box-number text-dark">{{ today_leads }}</span>
-            </div>
+    <div class="row mt-4">
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title">Daily Revenue</h5>
           </div>
-        </div>
 
-        <div class="col-md-3">
-          <a
-            href="{% url 'ViewLead' %}?status=won"
-            class="text-decoration-none"
-          >
-            <div class="info-box dashboard-card shadow-sm">
-              <span class="info-box-icon bg-success text-white">
-                <i class="bi bi-check-circle-fill"></i>
-              </span>
-              <div class="info-box-content">
-                <span class="info-box-text text-dark">Converted</span>
-                <span class="info-box-number text-dark">
-                  {{ converted_leads }}
-                </span>
-                <small class="text-muted">
-                  {{ conversion_rate }}% Conversion Rate
-                </small>
-              </div>
-            </div>
-          </a>
-        </div>
-
-        <div class="col-md-3">
-          <a
-            href="{% url 'ViewLead' %}?status=lost"
-            class="text-decoration-none"
-          >
-            <div class="info-box dashboard-card shadow-sm">
-              <span class="info-box-icon bg-danger text-white">
-                <i class="bi bi-x-circle-fill"></i>
-              </span>
-              <div class="info-box-content">
-                <span class="info-box-text text-dark">Lost Leads</span>
-                <span class="info-box-number text-dark">{{ lost_leads }}</span>
-              </div>
-            </div>
-          </a>
+          <div class="card-body">
+            <div id="dailyRevenueChart"></div>
+          </div>
         </div>
       </div>
-
-      <!-- ===================== FOLLOWUP SECTION ===================== -->
-      <div class="dashboard-section-title mt-4">Followups & Priority</div>
-
-      <div class="row g-3">
-        <div class="col-md-3">
-          <a
-            href="{% url 'ViewLead' %}?priority=high"
-            class="text-decoration-none"
-          >
-            <div class="info-box dashboard-card shadow-sm">
-              <span class="info-box-icon bg-warning text-dark">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-              </span>
-              <div class="info-box-content">
-                <span class="info-box-text text-dark">High Priority</span>
-                <span class="info-box-number text-dark"
-                  >{{ high_priority_leads }}</span
-                >
-              </div>
-            </div>
-          </a>
+           <div class="card col-lg-6">
+        <div class="card-header">
+          <h5 class="card-title">Monthly Target Progress</h5>
         </div>
 
-        <div class="col-md-3">
-          <div class="info-box dashboard-card shadow-sm">
-            <span class="info-box-icon bg-danger text-white">
-              <i class="bi bi-alarm-fill"></i>
-            </span>
-            <div class="info-box-content">
-              <span class="info-box-text text-dark">Overdue Followups</span>
-              <span class="info-box-number text-dark"
-                >{{ overdue_followups }}</span
-              >
-            </div>
-          </div>
-        </div>
+        <div class="card-body">
+          <p>Target: ${{ monthly_target }}</p>
+          <p>Achieved: ${{ achieved_sales }}</p>
+          <p>Remaining: ${{ remaining_target }}</p>
 
-        <div class="col-md-3">
-          <div class="info-box dashboard-card shadow-sm">
-            <span class="info-box-icon bg-secondary text-white">
-              <i class="bi bi-telephone-fill"></i>
-            </span>
-            <div class="info-box-content">
-              <span class="info-box-text text-dark">Today's Followups</span>
-              <span class="info-box-number text-dark"
-                >{{ today_followups }}</span
-              >
-            </div>
-          </div>
-        </div>
-
-        {% if total_users %}
-        <div class="col-md-3">
-          <a href="{% url 'viewusers' %}" class="text-decoration-none">
-            <div class="info-box dashboard-card shadow-sm">
-              <span class="info-box-icon bg-primary text-white">
-                <i class="bi bi-people-fill"></i>
-              </span>
-              <div class="info-box-content">
-                <span class="info-box-text text-dark">Total Users</span>
-                <span class="info-box-number text-dark">{{ total_users }}</span>
-              </div>
-            </div>
-          </a>
-        </div>
-        {% endif %}
-      </div>
-
-      <!-- ===================== REVENUE SECTION ===================== -->
-      <div class="dashboard-section-title mt-4">Revenue Overview</div>
-
-      <div class="row g-3">
-        <div class="col-md-3">
-          <div class="info-box dashboard-card shadow-sm">
-            <span class="info-box-icon bg-success text-white">
-              <i class="bi bi-cash-stack"></i>
-            </span>
-            <div class="info-box-content">
-              <span class="info-box-text text-dark">Total Revenue</span>
-              <span class="info-box-number text-success">
-                ${{ total_revenue|floatformat:2 }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-3">
-          <div class="info-box dashboard-card shadow-sm">
-            <span class="info-box-icon bg-primary text-white">
-              <i class="bi bi-check-circle-fill"></i>
-            </span>
-            <div class="info-box-content">
-              <span class="info-box-text text-dark">Paid Revenue</span>
-              <span class="info-box-number text-primary">
-                ${{ paid_revenue|floatformat:2 }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-3">
-          <div class="info-box dashboard-card shadow-sm">
-            <span class="info-box-icon bg-warning text-dark">
-              <i class="bi bi-hourglass-split"></i>
-            </span>
-            <div class="info-box-content">
-              <span class="info-box-text text-dark">Pending Revenue</span>
-              <span class="info-box-number text-warning">
-                ${{ pending_revenue|floatformat:2 }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-3">
-          <div class="info-box shadow-sm">
-            <span class="info-box-icon bg-dark text-white">
-              <i class="bi bi-currency-dollar"></i>
-            </span>
-            <div class="info-box-content">
-              <span class="info-box-text">Total Commission Paid</span>
-              <span class="info-box-number text-dark">
-                ${{ total_commission|floatformat:2 }}
-              </span>
-            </div>
-          </div>
-        </div>
-        <!-- include graph -->
-      </div>
-
-      <!-- ===================== SALES TARGET ===================== -->
-
-      <div class="dashboard-section-title mt-4">Sales Target</div>
-
-      <div class="row g-3">
-        <div class="col-md-3">
-          <div class="info-box dashboard-card shadow-sm">
-            <span class="info-box-icon bg-danger text-white">
-              <i class="bi bi-bullseye"></i>
-            </span>
-
-            <div class="info-box-content">
-              <span class="info-box-text text-dark">Monthly Target</span>
-              <span class="info-box-number text-dark">
-                ${{ monthly_target|floatformat:2 }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-3">
-          <div class="info-box dashboard-card shadow-sm">
-            <span class="info-box-icon bg-success text-white">
-              <i class="bi bi-graph-up-arrow"></i>
-            </span>
-
-            <div class="info-box-content">
-              <span class="info-box-text text-dark">Achieved</span>
-              <span class="info-box-number text-success">
-                ${{ achieved_sales|floatformat:2 }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-3">
-          <div class="info-box dashboard-card shadow-sm">
-            <span class="info-box-icon bg-warning text-dark">
-              <i class="bi bi-hourglass-split"></i>
-            </span>
-
-            <div class="info-box-content">
-              <span class="info-box-text text-dark">Remaining</span>
-              <span class="info-box-number text-warning">
-                ${{ remaining_target|floatformat:2 }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-3">
-          <div class="info-box dashboard-card shadow-sm">
-            <span class="info-box-icon bg-primary text-white">
-              <i class="bi bi-percent"></i>
-            </span>
-
-            <div class="info-box-content">
-              <span class="info-box-text text-dark">Progress</span>
-              <span class="info-box-number text-primary">
-                {{ target_progress }}%
-              </span>
+          <div class="progress">
+            <div
+              class="progress-bar bg-success"
+              role="progressbar"
+              style="width: {{ target_progress }}%"
+            >
+              {{ target_progress }}%
             </div>
           </div>
         </div>
       </div>
+       </div>
 
+   
+    <br />
+    <!-- SALES LEADERBOARD -->
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title">Sales Leaderboard</h5>
+          </div>
 
-      
+          <div class="card-body p-0">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Salesman</th>
+                  <th>Revenue</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {% for s in leaderboard %}
+
+                <tr>
+                  <td>{{ s.user }}</td>
+                  <td>${{ s.revenue }}</td>
+                </tr>
+
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title">Followups Today</h5>
+          </div>
+
+          <div class="card-body p-0">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Lead</th>
+                  <th>User</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {% for f in followups_today_list %}
+
+                <tr>
+                  <td>{{ f.lead.full_name }}</td>
+                  <td>{{ f.created_by }}</td>
+                  <td>{{ f.next_followup_date }}</td>
+                </tr>
+
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const leadFunnel = JSON.parse('{{ lead_values|default:"[]"|escapejs }}');
+  const months = JSON.parse('{{ months|default:"[]"|escapejs }}');
+  const monthlyRevenue = JSON.parse('{{ monthly_revenue|default:"[]"|escapejs }}');
+  const days = JSON.parse('{{ days|default:"[]"|escapejs }}');
+  const dailyRevenue = JSON.parse('{{ daily_revenue|default:"[]"|escapejs }}');
+
+  // -------------------
+  // Lead Funnel Chart
+  // -------------------
+
+  const funnelChart = new ApexCharts(
+    document.querySelector("#leadFunnelChart"),
+    {
+      chart: {
+        type: "bar",
+        height: 350,
+        toolbar: { show: true }
+      },
+      series: [{
+        name: "Leads",
+        data: leadFunnel
+      }],
+      colors: [
+        "#0d6efd",
+        "#20c997",
+        "#ffc107",
+        "#6610f2",
+        "#fd7e14",
+        "#dc3545"
+      ],
+      plotOptions: {
+        bar: {
+          distributed: true,
+          borderRadius: 6
+        }
+      },
+      xaxis: {
+        categories: [
+          "New",
+          "Contacted",
+          "Qualified",
+          "Proposal",
+          "Negotiation",
+          "Won"
+        ]
+      },
+      tooltip: {
+        y: {
+          formatter: function(val) {
+            return val + " leads";
+          }
+        }
+      }
+    }
+  );
+
+  funnelChart.render();
+
+
+  // -------------------
+  // Monthly Revenue
+  // -------------------
+
+  const revenueChart = new ApexCharts(
+    document.querySelector("#revenueChart"),
+    {
+      chart: {
+        type: "area",
+        height: 350,
+        zoom: { enabled: true }
+      },
+      series: [{
+        name: "Revenue",
+        data: monthlyRevenue
+      }],
+      colors: ["#198754"],
+      stroke: {
+        curve: "smooth",
+        width: 3
+      },
+      fill: {
+        type: "gradient",
+        gradient: {
+          opacityFrom: 0.4,
+          opacityTo: 0.1
+        }
+      },
+      markers: {
+        size: 5
+      },
+      xaxis: {
+        categories: months
+      },
+      tooltip: {
+        y: {
+          formatter: function(val) {
+            return "Rs " + val;
+          }
+        }
+      }
+    }
+  );
+
+  revenueChart.render();
+
+
+  // -------------------
+  // Daily Revenue
+  // -------------------
+
+  const dailyChart = new ApexCharts(
+    document.querySelector("#dailyRevenueChart"),
+    {
+      chart: {
+        type: "line",
+        height: 350,
+        zoom: { enabled: true }
+      },
+      series: [{
+        name: "Daily Revenue",
+        data: dailyRevenue
+      }],
+      colors: ["#20c997"],
+      stroke: {
+        curve: "smooth",
+        width: 3
+      },
+      markers: {
+        size: 4,
+        hover: {
+          size: 7
+        }
+      },
+      xaxis: {
+        categories: days
+      },
+      tooltip: {
+        y: {
+          formatter: function(val) {
+            return "Rs " + val;
+          }
+        }
+      }
+    }
+  );
+
+  dailyChart.render();
+
+});
+</script>

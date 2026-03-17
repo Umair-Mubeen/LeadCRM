@@ -1,0 +1,238 @@
+{% load humanize %}
+<div class="row">
+
+<!-- Total Leads -->
+<div class="col-lg-3 col-6">
+<div class="small-box text-bg-primary">
+<div class="inner">
+<h3>{{ total_leads }}</h3>
+<p>Total Leads</p>
+</div>
+<div class="small-box-icon">
+<i class="bi bi-people"></i>
+</div>
+</div>
+</div>
+
+<!-- Deals Won -->
+<div class="col-lg-3 col-6">
+<div class="small-box text-bg-success">
+<div class="inner">
+<h3>{{ deals_won }}</h3>
+<p>Deals Won</p>
+</div>
+<div class="small-box-icon">
+<i class="bi bi-trophy"></i>
+</div>
+</div>
+</div>
+
+<!-- Revenue -->
+<div class="col-lg-3 col-6">
+<div class="small-box text-bg-warning">
+<div class="inner">
+<h3>Rs {{ total_revenue|floatformat:0 }}</h3>
+<p>Total Revenue</p>
+</div>
+<div class="small-box-icon">
+<i class="bi bi-cash-stack"></i>
+</div>
+</div>
+</div>
+
+<!-- Followups -->
+<div class="col-lg-3 col-6">
+<div class="small-box text-bg-info">
+<div class="inner">
+<h3>{{ followups_today }}</h3>
+<p>Followups Today</p>
+</div>
+<div class="small-box-icon">
+<i class="bi bi-calendar-check"></i>
+</div>
+</div>
+</div>
+
+</div>
+
+<div class="card">
+<div class="card-header">
+<h5 class="card-title">Lead Pipeline</h5>
+</div>
+
+<div class="card-body">
+<canvas id="leadStatusChart"></canvas>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">
+<h5 class="card-title">Monthly Revenue</h5>
+</div>
+
+<div class="card-body">
+<canvas id="revenueChart"></canvas>
+</div>
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    // ----------------------
+    // Parse Django JSON Data
+    // ----------------------
+
+    const leadLabels = JSON.parse('{{ lead_labels|default:"[]"|escapejs }}');
+    const leadValues = JSON.parse('{{ lead_values|default:"[]"|escapejs }}');
+
+    const months = JSON.parse('{{ months|default:"[]"|escapejs }}');
+    const monthlyRevenue = JSON.parse('{{ monthly_revenue|default:"[]"|escapejs }}');
+
+
+    // ----------------------
+    // Lead Funnel Chart
+    // ----------------------
+
+    const leadCanvas = document.getElementById("leadStatusChart");
+
+    if (leadCanvas) {
+        new Chart(leadCanvas, {
+            type: "bar",
+            data: {
+                labels: leadLabels,
+                datasets: [{
+                    label: "Leads",
+                    data: leadValues,
+                    backgroundColor: "#0d6efd",
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+
+    // ----------------------
+    // Monthly Revenue Chart
+    // ----------------------
+
+    const revenueCanvas = document.getElementById("revenueChart");
+
+    if (revenueCanvas) {
+        new Chart(revenueCanvas, {
+            type: "line",
+            data: {
+                labels: months,
+                datasets: [{
+                    label: "Monthly Revenue",
+                    data: monthlyRevenue,
+                    borderColor: "#198754",
+                    backgroundColor: "rgba(25,135,84,0.2)",
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+});
+
+</script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.min.js"></script>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+  // ---------------------------
+  // Lead Funnel Chart
+  // ---------------------------
+
+  var funnelOptions = {
+    chart: {
+      type: 'bar',
+      height: 350
+    },
+    series: [{
+      name: "Leads",
+      data: {{ lead_funnel|safe }}
+    }],
+    xaxis: {
+      categories: ['New','Contacted','Qualified','Proposal','Negotiation','Won']
+    }
+  };
+
+  var funnelChart = new ApexCharts(
+    document.querySelector("#leadFunnelChart"),
+    funnelOptions
+  );
+
+  funnelChart.render();
+
+
+  // ---------------------------
+  // Monthly Revenue Chart
+  // ---------------------------
+
+  var revenueOptions = {
+    chart: {
+      type: 'line',
+      height: 350
+    },
+    series: [{
+      name: 'Revenue',
+      data: {{ monthly_revenue|safe }}
+    }],
+    xaxis: {
+      categories: {{ months|safe }}
+    }
+  };
+
+  var revenueChart = new ApexCharts(
+    document.querySelector("#revenueChart"),
+    revenueOptions
+  );
+
+  revenueChart.render();
+
+});
+
+</script>

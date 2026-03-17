@@ -1,0 +1,198 @@
+<html>
+{% load static %}
+
+<head>
+  <meta charset="utf-8">
+  <title>LeadCRM | Expense</title>
+
+  <link rel="stylesheet" href="{% static 'css/adminlte.css' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.min.css">
+</head>
+
+<body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">
+
+<div class="app-wrapper">
+
+{% include 'navbar.html' %}
+{% include 'sidebar.html' %}
+
+<main class="app-main">
+
+<!-- HEADER -->
+<div class="app-content-header">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-6">
+        <h3 class="mb-0">Expense</h3>
+      </div>
+
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-end">
+          <li class="breadcrumb-item">
+            <a href="{% url 'dashboard' %}" style="color: black;">Dashboard</a>
+          </li>
+
+          <li class="breadcrumb-item">
+            <a href="{% url 'ViewExpenses' %}" style="color: black;">Manage Expenses</a>
+          </li>
+
+          <li class="breadcrumb-item active">
+            {% if expense %}Edit{% else %}Create{% endif %}
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="app-content">
+<div class="container-fluid">
+
+<div class="card card-info card-outline">
+
+<div class="card-header">
+  <div class="card-title">
+    {% if expense %}Edit Expense{% else %}Add Expense{% endif %}
+  </div>
+</div>
+
+<form method="POST" action="{% if expense %}{% url 'AddEditExpense' expense.id %}{% else %}{% url 'AddExpense' %}{% endif %}">
+
+{% csrf_token %}
+
+<div class="card-body">
+
+<div class="row g-3">
+
+<!-- TITLE -->
+<div class="col-md-6">
+<label class="form-label">Expense Title *</label>
+<input type="text"
+       class="form-control"
+       name="title"
+       value="{{expense.title|default:''}}"
+       required>
+</div>
+
+<!-- CATEGORY -->
+<div class="col-md-6">
+<label class="form-label">Category *</label>
+
+<select name="category" class="form-select" required>
+
+<option value="">Select Category</option>
+
+<option value="marketing" {% if expense.category == "marketing" %}selected{% endif %}>Marketing</option>
+<option value="ads" {% if expense.category == "ads" %}selected{% endif %}>Advertising</option>
+<option value="facebook_ads" {% if expense.category == "facebook_ads" %}selected{% endif %}>Facebook Ads</option>
+<option value="google_ads" {% if expense.category == "google_ads" %}selected{% endif %}>Google Ads</option>
+
+<option value="software" {% if expense.category == "software" %}selected{% endif %}>Software</option>
+<option value="hosting" {% if expense.category == "hosting" %}selected{% endif %}>Hosting</option>
+
+<option value="office" {% if expense.category == "office" %}selected{% endif %}>Office</option>
+<option value="rent" {% if expense.category == "rent" %}selected{% endif %}>Rent</option>
+
+<option value="salary" {% if expense.category == "salary" %}selected{% endif %}>Salary</option>
+<option value="commission" {% if expense.category == "commission" %}selected{% endif %}>Commission</option>
+
+<option value="travel" {% if expense.category == "travel" %}selected{% endif %}>Travel</option>
+<option value="fuel" {% if expense.category == "fuel" %}selected{% endif %}>Fuel</option>
+
+<option value="events" {% if expense.category == "events" %}selected{% endif %}>Events</option>
+
+<option value="misc" {% if expense.category == "misc" %}selected{% endif %}>Misc</option>
+
+</select>
+</div>
+
+<!-- AMOUNT -->
+<div class="col-md-6">
+<label class="form-label">Amount *</label>
+
+<div class="input-group">
+<span class="input-group-text">Rs</span>
+
+<input type="number"
+       step="0.01"
+       class="form-control"
+       name="amount"
+       value="{{ expense.amount|default:'' }}"
+       required>
+</div>
+</div>
+
+<!-- DATE -->
+<div class="col-md-6">
+<label class="form-label">Expense Date *</label>
+<input type="date"
+       class="form-control"
+       name="expense_date"
+       value="{{ expense.expense_date|date:'Y-m-d' }}"
+       required>
+</div>
+
+<!-- LEAD SOURCE -->
+<div class="col-md-6">
+<label class="form-label">Lead Source</label>
+
+<select name="lead_source" class="form-select">
+
+<option value="">Select Source</option>
+
+<option value="facebook_ads" {% if expense.lead_source == "facebook_ads" %}selected{% endif %}>Facebook Ads</option>
+<option value="google_ads" {% if expense.lead_source == "google_ads" %}selected{% endif %}>Google Ads</option>
+<option value="instagram" {% if expense.lead_source == "instagram" %}selected{% endif %}>Instagram</option>
+<option value="linkedin" {% if expense.lead_source == "linkedin" %}selected{% endif %}>LinkedIn</option>
+
+<option value="website" {% if expense.lead_source == "website" %}selected{% endif %}>Website</option>
+<option value="seo" {% if expense.lead_source == "seo" %}selected{% endif %}>SEO</option>
+
+<option value="whatsapp" {% if expense.lead_source == "whatsapp" %}selected{% endif %}>WhatsApp</option>
+<option value="call" {% if expense.lead_source == "call" %}selected{% endif %}>Phone Call</option>
+<option value="email" {% if expense.lead_source == "email" %}selected{% endif %}>Email</option>
+
+<option value="referral" {% if expense.lead_source == "referral" %}selected{% endif %}>Referral</option>
+
+<option value="event" {% if expense.lead_source == "event" %}selected{% endif %}>Event</option>
+<option value="walkin" {% if expense.lead_source == "walkin" %}selected{% endif %}>Walk-in</option>
+
+<option value="fiverr" {% if expense.lead_source == "fiverr" %}selected{% endif %}>Fiverr</option>
+<option value="upwork" {% if expense.lead_source == "upwork" %}selected{% endif %}>Upwork</option>
+
+</select>
+</div>
+
+</div>
+</div>
+
+<!-- FOOTER -->
+<div class="card-footer text-end">
+
+<a href="{% url 'ViewExpenses' %}" class="btn btn-secondary">
+Cancel
+</a>
+
+<button type="submit" class="btn btn-primary">
+{% if expense %}Update Expense{% else %}Save Expense{% endif %}
+</button>
+
+</div>
+
+</form>
+
+</div>
+</div>
+</div>
+
+</main>
+
+{% include 'footer.html' %}
+
+</div>
+
+<script src="{% static 'js/adminlte.js' %}"></script>
+
+</body>
+</html>

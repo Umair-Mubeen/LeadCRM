@@ -9,15 +9,17 @@ from functools import wraps
 from django.db.models import Prefetch
 from django.db.models import Count, Sum
 from django.db.models import Prefetch
-from django.db.models.functions import TruncMonth
+from django.db.models.functions import TruncMonth, TruncDate
 from decimal import Decimal
-from .graph import RevenueDashboard, MonthlySalesTarget, SalesLeaderboard, MonthlyTargetAchieved
+from .graph import RevenueDashboard, MonthlySalesTarget, SalesLeaderboard,LeadFunnel,DashboardData
 from django.db.models import Q
 from django.db import transaction
 from django.contrib import messages
 from django.urls import reverse
 from datetime import datetime
-from .models import UserProfile, Lead, LeadFollowUp, LeadStatusHistory, Deal, Commission, DealInstallment, SalesTarget, CallLog
+import json
+from .models import UserProfile, Lead, LeadFollowUp, LeadStatusHistory, Deal, Commission, DealInstallment, SalesTarget, CallLog, Expense
+from django.utils.timezone import now
 
 def role_required(allowed_roles):
     def decorator(view_func):
@@ -55,190 +57,108 @@ def logout_view(request):
     return redirect('/')
 
 
-@login_required
 def dashboard(request):
+    selected_month = request.GET.get("month")
+    dashboard_data = DashboardData(request.user)
+    revenue_data = RevenueDashboard(selected_month)
+    today = timezone.localdate()   
+    total_leads = Lead.objects.count()
+    deals_won = Lead.objects.filter(status="won").count()
+    total_revenue = (DealInstallment.objects.aggregate(total=Sum("amount")).get("total") or 0)
+    followups_today = LeadFollowUp.objects.filter(next_followup_date=today,is_completed=False).count()
+    followups_today_list = LeadFollowUp.objects.filter(next_followup_date=today,is_completed=False).select_related("lead", "created_by")[:10]
+    leaderboard = (DealInstallment.objects.values("deal__lead__assigned_to__username").annotate(revenue=Sum("amount")).order_by("-revenue")[:5])
+    today = timezone.localdate()
+    current_year = today.year
+    current_month = today.month
+    days = []
+    daily_revenue = []
 
-    user = request.user
-    today = timezone.now().date()
-    month = request.GET.get("month")
-
-    is_admin = user.profile.is_admin
-    is_lgs = user.profile.is_lgs
-
-    rev = RevenueDashboard(month)
-
-    # ================= ROLE BASED DATA =================
-
-    if is_admin or is_lgs:
-        leads = Lead.objects.filter(is_deleted=False)
-        followups = LeadFollowUp.objects.filter(lead__is_deleted=False)
-        deals = Deal.objects.filter(is_deleted=False)
-        installments = DealInstallment.objects.filter(is_deleted=False)
-
-        total_users = User.objects.count() if is_admin else None
-
-    else:
-        leads = Lead.objects.filter(is_deleted=False)
-
-        followups = LeadFollowUp.objects.filter(
-            lead__assigned_to=user,
-            lead__is_deleted=False
+    daily_data = (
+        DealInstallment.objects
+        .filter(
+            payment_date__year=current_year,
+            payment_date__month=current_month
         )
-
-        deals = Deal.objects.filter(
-            is_deleted=False,
-            lead__assigned_to=user
-        )
-
-        installments = DealInstallment.objects.filter(
-            is_deleted=False,
-            deal__lead__assigned_to=user
-        )
-
-        total_users = None
-
-    # ================= LEAD STATS =================
-
-    total_leads = leads.count()
-
-    today_leads = leads.filter(
-        date_added__date=today
-    ).count()
-
-    converted_leads = leads.filter(status="won").count()
-
-    lost_leads = leads.filter(status="lost").count()
-
-    high_priority_leads = leads.filter(
-        priority="high"
-    ).exclude(status="won").count()
-
-    overdue_followups = followups.filter(
-        next_followup_date__lt=today,
-        is_completed=False
-    ).count()
-
-    today_followups = followups.filter(
-        next_followup_date=today,
-        is_completed=False
-    ).count()
-
-    conversion_rate = 0
-
-    if total_leads > 0:
-        conversion_rate = round(
-            (converted_leads / total_leads) * 100, 2
-        )
-
-    # ================= REVENUE =================
-
-    total_revenue = installments.aggregate(
-        total=Sum("amount")
-    )["total"] or 0
-
-    paid_revenue = total_revenue
-
-    pending_revenue = deals.aggregate(
-        total=Sum("deal_value")
-    )["total"] or 0
-
-    pending_revenue = pending_revenue - total_revenue
-
-    # ================= MONTHLY REVENUE GRAPH =================
-
-    months = []
-    revenues = []
-
-    monthly_data = (
-        installments
-        .annotate(month=TruncMonth("payment_date"))
-        .values("month")
+        .annotate(day=TruncDate("payment_date"))
+        .values("day")
         .annotate(total=Sum("amount"))
-        .order_by("month")
+        .order_by("day")
     )
 
-    for item in monthly_data:
-        months.append(item["month"].strftime("%b %Y"))
-        revenues.append(float(item["total"]))
+    for item in daily_data:
 
-    # ================= COMMISSION =================
+        if item["day"]:
+            days.append(item["day"].strftime("%d %b"))
+            daily_revenue.append(float(item["total"] or 0))
 
-    if is_admin or is_lgs:
+    print(days)    
 
-        total_commission = Commission.objects.aggregate(
-            total=Sum("amount")
-        )["total"] or 0
-
-    else:
-
-        total_commission = Commission.objects.filter(
-            user=user
-        ).aggregate(
-            total=Sum("amount")
-        )["total"] or 0
-
-    # ================= SALESMAN STATS (ADMIN ONLY) =================
-
-    salesman_stats = None
-
-    if is_admin:
-
-        salesman_stats = (
-            deals
-            .values("lead__assigned_to__username")
-            .annotate(
-                total_revenue=Sum("deal_value"),
-                total_deals=Count("id")
-            )
-            .order_by("-total_revenue")
-        )
-
-    # ================= MONTH SELECTOR =================
-
-    months_list = [
-        (1, "Jan"), (2, "Feb"), (3, "Mar"),
-        (4, "Apr"), (5, "May"), (6, "Jun"),
-        (7, "Jul"), (8, "Aug"), (9, "Sep"),
-        (10, "Oct"), (11, "Nov"), (12, "Dec"),
+    for s in leaderboard:
+        s["user"] = s["deal__lead__assigned_to__username"]
+    lead_funnel = [
+        Lead.objects.filter(status="new").count(),
+        Lead.objects.filter(status="contacted").count(),
+        Lead.objects.filter(status="qualified").count(),
+        Lead.objects.filter(status="proposal").count(),
+        Lead.objects.filter(status="negotiation").count(),
+        Lead.objects.filter(status="won").count(),
     ]
+   
+    lead_labels = json.dumps([
+        "New",
+        "Contacted",
+        "Qualified",
+        "Proposal",
+        "Negotiation",
+        "Won"
+    ])
 
-    # ================= CONTEXT =================
+    lead_values = json.dumps(lead_funnel)
+
+    # -------------------
+    # CONTEXT
+    # -------------------
 
     context = {
 
+        # dashboard cards
         "total_leads": total_leads,
-        "today_leads": today_leads,
-        "converted_leads": converted_leads,
-        "lost_leads": lost_leads,
-        "high_priority_leads": high_priority_leads,
+        "deals_won": deals_won,
+        "revenue": total_revenue,
+        "followups_today": followups_today,
 
-        "overdue_followups": overdue_followups,
-        "today_followups": today_followups,
+        # followups
+        "followups_today_list": followups_today_list,
+            "leaderboard": leaderboard,
+    
+        # lead funnel
+        "lead_labels": lead_labels,
+        "lead_values": lead_values,
 
-        "conversion_rate": conversion_rate,
+        # revenue stats
+        "today_revenue": revenue_data["today"],
+        "yesterday_revenue": revenue_data["yesterday"],
+        "this_month_revenue": revenue_data["this_month"],
+        "this_year_revenue": revenue_data["this_year"],
 
-        "total_users": total_users,
+        # daily chart
+        "days": revenue_data["days"],
+        "daily_revenue": revenue_data["daily"],
 
-        "total_revenue": total_revenue,
-        "paid_revenue": paid_revenue,
-        "pending_revenue": pending_revenue,
+        # monthly chart
+        "months": revenue_data["months"],
+        "monthly_revenue": revenue_data["monthly"],
 
-        "salesman_stats": salesman_stats,
+        # filters
+        "selected_month": selected_month,
 
-        "total_commission": total_commission,
-
-        "rev": rev,
-
-        "months": months,
-        "revenues": revenues,
-
-        "months_list": months_list,
-        "selected_month": int(month) if month else None,
+        # extra dashboard data
+        "dashboard_data": dashboard_data,
+        "days" : json.dumps(days),
+        "daily_revenue" : json.dumps(daily_revenue)
     }
-
-    # ================= MONTHLY TARGET =================
-
-    context.update(MonthlySalesTarget(request))
+   
 
     return render(request, "index.html", context)
 
@@ -390,12 +310,10 @@ def AddEditLead(request, leadId=None):
 def AddEditFollowup(request, lead_id, followup_id=None):
 
     lead = get_object_or_404(Lead, pk=lead_id, is_deleted=False)
-    print(lead)
+
     next_url = request.GET.get("next") or request.POST.get("next")
     user = request.user
-    print(user)
 
-    # Basic lead access check
     if not (
         user.profile.is_admin
         or user.profile.is_lgs
@@ -409,12 +327,11 @@ def AddEditFollowup(request, lead_id, followup_id=None):
         followup = get_object_or_404(
             LeadFollowUp,
             pk=followup_id,
-            lead=lead,
-            created_by_id = request.user
+            lead=lead
         )
 
-        # permission check
-        if not (request.user.profile.is_admin or request.user.profile.is_salesman or request.user.profile.is_lgs):
+        # Only creator or admin can edit
+        if not (user.profile.is_admin or followup.created_by == user):
             raise PermissionDenied
 
     if request.method == "POST":
@@ -438,15 +355,14 @@ def AddEditFollowup(request, lead_id, followup_id=None):
             )
 
         if next_url:
-            print('next_url', next_url)
-            url = f"#collapse{lead.id}"
-            return redirect(next_url + url)
+            return redirect(next_url + f"#collapse{lead.id}")
 
+        return redirect("ViewLead")
 
     return render(request, "lead_progress.html", {
         "lead": lead,
         "followup": followup,
-        "next_url" :next_url
+        "next_url": next_url
     })
 
 @login_required
@@ -821,3 +737,104 @@ def add_call_log(request, lead_id):
         return redirect(next_url)
 
     return redirect("ViewLead")
+
+
+
+def DashboardIcon(request):
+
+    today = now().date()
+
+    total_leads = Lead.objects.count()
+
+    deals_won = Lead.objects.filter(status="won").count()
+
+    revenue = DealInstallment.objects.aggregate(
+        total=Sum("amount")
+    )["total"] or 0
+
+    followups_today = LeadFollowUp.objects.filter(
+        next_followup_date=today,
+        is_completed=False
+    ).count()
+
+    followups_today_list = LeadFollowUp.objects.filter(
+        next_followup_date=today,
+        is_completed=False
+    )[:10]
+
+    context = {
+        "total_leads": total_leads,
+        "deals_won": deals_won,
+        "revenue": revenue,
+        "followups_today": followups_today,
+        "followups_today_list": followups_today_list,
+    }
+
+    return render(request, "Dashboard.html", context)
+
+
+
+
+
+
+def ViewExpenses(request):
+    expenses = Expense.objects.all().order_by("-expense_date")
+    return render(request,"view_expenses.html",{"expenses": expenses})
+
+
+
+def AddEditExpense(request, id=None):
+
+    expense = None
+
+    if id:
+        expense = get_object_or_404(Expense, id=id,is_deleted=False)
+        print(expense)
+
+    if request.method == "POST":
+
+        title = request.POST.get("title")
+        category = request.POST.get("category")
+        amount_input = request.POST.get("amount")
+        expense_date = request.POST.get("expense_date")
+        lead_source = request.POST.get("lead_source")
+       
+
+        try:
+            amount = Decimal(amount_input)
+        except:
+            amount = Decimal("0")
+
+        # UPDATE
+        if expense:
+            expense.title = title
+            expense.category = category
+            expense.amount = amount
+            expense.expense_date = expense_date
+            expense.lead_source = lead_source
+            expense.updated_by=request.user
+            expense.save()
+
+        # CREATE
+        else:
+            Expense.objects.create(
+                title=title,
+                category=category,
+                amount=amount,
+                expense_date=expense_date,
+                lead_source=lead_source,
+                created_by=request.user
+            )
+
+        return redirect("ViewExpenses")
+
+    return render(request, "AddEditExpenses.html", {
+        "expense": expense
+    })
+
+
+def DeleteExpense(request, id):
+
+    expense = get_object_or_404(Expense,id=id)
+    expense.soft_delete(request.user) 
+    return redirect("ViewExpenses")

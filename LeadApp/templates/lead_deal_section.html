@@ -1,4 +1,4 @@
-{% if lead.is_converted %}
+{% if lead.is_converted and request.user.profile.is_admin %}
 
 <div class="card shadow-sm mb-3 border-0">
 

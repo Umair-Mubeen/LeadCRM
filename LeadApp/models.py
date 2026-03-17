@@ -22,9 +22,11 @@ class SoftDeleteModel(models.Model):
     class Meta:
         abstract = True
 
-    def soft_delete(self):
+    def soft_delete(self, user=None):
         self.is_deleted = True
         self.deleted_at = timezone.now()
+        if user:
+            self.deleted_by = user
         self.save()
 
 class UserProfile(SoftDeleteModel):
@@ -741,4 +743,38 @@ class CallLog(SoftDeleteModel):
         return f"{self.lead.full_name} - {self.user}"
     
 
-    
+class Expense(SoftDeleteModel):
+
+    title = models.CharField(max_length=200)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    category = models.CharField(max_length=50)
+    expense_date = models.DateField(default=timezone.now)
+    lead_source = models.CharField(max_length=50, blank=True)
+
+    # ✅ ADD THESE
+    created_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="expenses_created"
+    )
+
+    updated_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="expenses_updated"
+    )
+
+    deleted_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="expenses_deleted"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
