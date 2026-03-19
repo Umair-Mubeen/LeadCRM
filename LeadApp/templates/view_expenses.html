@@ -71,6 +71,9 @@
                       >Dashboard</a
                     >
                   </li>
+                   <li class="breadcrumb-item active" aria-current="page">
+                    <a href="{% url 'AddExpense'%}" style="color:black"> Create Expenses </a>
+                  </li>
                   <li class="breadcrumb-item active" aria-current="page">
                     Manange Expenses
                   </li>
@@ -113,7 +116,7 @@
                       <td>{{ exp.category }}</td>
                       <td>{{ exp.lead_source }}</td>
                       <td>{{ exp.expense_date }}</td>
-                      <td></td>
+                      <td>{{ exp.created_by.username }}</td>
 
                       <td>{{ exp.created_at }}</td>
 

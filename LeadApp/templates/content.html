@@ -1,340 +1,477 @@
+<style>
+/* ===== GLOBAL ===== */
+body {
+  background: #f5f7fb;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ===== KPI CARDS ===== */
+.kpi-card {
+  border-radius: 18px;
+  padding: 22px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  transition: 0.3s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+}
+
+.kpi-card h3 {
+  font-weight: 700;
+  margin: 0;
+}
+
+.kpi-card p {
+  opacity: 0.9;
+  margin: 0;
+}
+
+.kpi-icon {
+  position: absolute;
+  right: 20px;
+  bottom: 15px;
+  font-size: 42px;
+  opacity: 0.2;
+}
+
+/* Gradients */
+.bg-revenue { background: linear-gradient(135deg, #198754, #20c997); }
+.bg-expense { background: linear-gradient(135deg, #dc3545, #ff6b6b); }
+.bg-commission { background: linear-gradient(135deg, #ffc107, #ffcd39); color:#000; }
+.bg-profit { background: linear-gradient(135deg, #0d6efd, #4dabf7); }
+.bg-loss { background: linear-gradient(135deg, #dc3545, #ff4d4d); }
+
+/* ===== CARDS ===== */
+.card {
+  border: none;
+  border-radius: 18px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+  transition: 0.3s;
+}
+
+.card:hover {
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.card-header {
+  font-weight: 600;
+  font-size: 15px;
+  background: transparent;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* ===== TABLE ===== */
+.table {
+  margin: 0;
+}
+
+.table th {
+  font-size: 13px;
+  color: #888;
+}
+
+.table td {
+  font-weight: 500;
+}
+
+/* ===== SPACING ===== */
+.section {
+  margin-top: 25px;
+}
+</style>
+
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.min.js"></script>
 
 <main class="app-main">
   <div class="container-fluid mt-4">
-    <!-- KPI CARDS -->
-    <div class="row">
-      <div class="col-lg-3 col-6">
-        <div class="small-box text-bg-primary">
-          <div class="inner">
-            <h3>{{ total_leads }}</h3>
-            <p>Total Leads</p>
-          </div>
-          <div class="small-box-icon">
-            <i class="bi bi-people"></i>
-          </div>
-        </div>
-      </div>
+    <div class="row g-3">
 
-      <div class="col-lg-3 col-6">
-        <div class="small-box text-bg-success">
-          <div class="inner">
-            <h3>{{ deals_won }}</h3>
-            <p>Deals Won</p>
-          </div>
-          <div class="small-box-icon">
-            <i class="bi bi-trophy"></i>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-lg-3 col-6">
-        <div class="small-box text-bg-warning">
-          <div class="inner">
-            <h3>${{ revenue|floatformat:0 }}</h3>
-            <p>Total Revenue</p>
-          </div>
-          <div class="small-box-icon">
-            <i class="bi bi-cash-stack"></i>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-lg-3 col-6">
-        <div class="small-box text-bg-info">
-          <div class="inner">
-            <h3>{{ followups_today }}</h3>
-            <p>Followups Today</p>
-          </div>
-          <div class="small-box-icon">
-            <i class="bi bi-calendar-check"></i>
-          </div>
-        </div>
-      </div>
+  <div class="col-lg-3 col-md-6">
+    <div class="kpi-card bg-revenue">
+      <h3>Rs {{ revenue|floatformat:0 }}</h3>
+      <p>Total Revenue</p>
+      <i class="bi bi-cash-stack kpi-icon"></i>
     </div>
+  </div>
 
+  <div class="col-lg-3 col-md-6">
+    <div class="kpi-card bg-expense">
+      <h3>Rs {{ expense|floatformat:0 }}</h3>
+      <p>Total Expenses</p>
+      <i class="bi bi-wallet2 kpi-icon"></i>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-md-6">
+    <div class="kpi-card bg-commission">
+      <h3>Rs {{ commission|floatformat:0 }}</h3>
+      <p>Total Commission</p>
+      <i class="bi bi-receipt kpi-icon"></i>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-md-6">
+    <div class="kpi-card {% if net_profit >= 0 %}bg-profit{% else %}bg-loss{% endif %}">
+      <h3>
+        {% if net_profit < 0 %}
+          Loss: Rs {{ net_profit }}
+        {% else %}
+          Profit: Rs {{ net_profit }}
+        {% endif %}
+      </h3>
+      <p>Net Profit</p>
+      <i class="bi bi-graph-up-arrow kpi-icon"></i>
+    </div>
+  </div>
+
+</div>
+  
+
+    <br/>
+
+    
+    
+  
     <!-- CHARTS -->
-    <div class="row">
-      <div class="col-lg-6">
-        <div class="card">
-          <div class="card-header">
-            <h5 class="card-title">Lead Funnel</h5>
-          </div>
+  
+      <div class="row section g-3">
 
-          <div class="card-body">
-            <div id="leadFunnelChart"></div>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-6">
-        <div class="card">
-          <div class="card-header">
-            <h5 class="card-title">Monthly Revenue</h5>
-          </div>
-
-          <div class="card-body">
-            <div id="revenueChart"></div>
-          </div>
-        </div>
-      </div>
-   
-    </div>
-    <div class="row mt-4">
-      <div class="col-lg-6">
-        <div class="card">
-          <div class="card-header">
-            <h5 class="card-title">Daily Revenue</h5>
-          </div>
-
-          <div class="card-body">
-            <div id="dailyRevenueChart"></div>
-          </div>
-        </div>
-      </div>
-           <div class="card col-lg-6">
-        <div class="card-header">
-          <h5 class="card-title">Monthly Target Progress</h5>
-        </div>
-
-        <div class="card-body">
-          <p>Target: ${{ monthly_target }}</p>
-          <p>Achieved: ${{ achieved_sales }}</p>
-          <p>Remaining: ${{ remaining_target }}</p>
-
-          <div class="progress">
-            <div
-              class="progress-bar bg-success"
-              role="progressbar"
-              style="width: {{ target_progress }}%"
-            >
-              {{ target_progress }}%
-            </div>
-          </div>
-        </div>
-      </div>
-       </div>
-
-   
-    <br />
-    <!-- SALES LEADERBOARD -->
-    <div class="row">
-      <div class="col-lg-6">
-        <div class="card">
-          <div class="card-header">
-            <h5 class="card-title">Sales Leaderboard</h5>
-          </div>
-
-          <div class="card-body p-0">
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>Salesman</th>
-                  <th>Revenue</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {% for s in leaderboard %}
-
-                <tr>
-                  <td>{{ s.user }}</td>
-                  <td>${{ s.revenue }}</td>
-                </tr>
-
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-lg-6">
-        <div class="card">
-          <div class="card-header">
-            <h5 class="card-title">Followups Today</h5>
-          </div>
-
-          <div class="card-body p-0">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Lead</th>
-                  <th>User</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {% for f in followups_today_list %}
-
-                <tr>
-                  <td>{{ f.lead.full_name }}</td>
-                  <td>{{ f.created_by }}</td>
-                  <td>{{ f.next_followup_date }}</td>
-                </tr>
-
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">Lead Funnel</div>
+      <div class="card-body">
+        <div id="leadFunnelChart"></div>
       </div>
     </div>
   </div>
-</main>
 
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">Monthly Revenue</div>
+      <div class="card-body">
+        <div id="revenueChart"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="row section g-3">
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">Daily Revenue</div>
+      <div class="card-body">
+        <div id="dailyRevenueChart"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">Revenue vs Expense vs Profit</div>
+      <div class="card-body">
+        <div id="profitChart"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card col-lg-6">
+  <div class="card-header">
+    <h5 class="card-title">Sales Target vs Achieved</h5>
+  </div>
+  <div class="card-body">
+    <div id="salesTargetChart"></div>
+  </div>
+</div>
+
+</div>
+    <!-- SALES LEADERBOARD -->
+    <div class="row">
+      <div class="row section g-3">
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">Sales Leaderboard</div>
+      <div class="card-body p-0">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Salesman</th>
+              <th>Revenue</th>
+              <th>Profit</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in leaderboard %}
+            <tr>
+              <td>{{ s.user }}</td>
+              <td>Rs {{ s.revenue }}</td>
+              <td>Rs {{ s.profit }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">Followups Today</div>
+      <div class="card-body p-0">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Lead</th>
+              <th>User</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in followups_today_list %}
+            <tr>
+              <td>{{ f.lead.full_name }}</td>
+              <td>{{ f.created_by }}</td>
+              <td>{{ f.next_followup_date }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+    </div>
+  </div>
+</main>
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
+  // =========================
+  // 🎨 COLOR UTILITIES
+  // =========================
+  function getRandomColor() {
+    const colors = [
+      "#0d6efd", "#20c997", "#ffc107",
+      "#6610f2", "#fd7e14", "#dc3545",
+      "#198754", "#6f42c1", "#0dcaf0"
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+  }
+
+  // =========================
+  // 📦 DATA
+  // =========================
   const leadFunnel = JSON.parse('{{ lead_values|default:"[]"|escapejs }}');
-  const months = JSON.parse('{{ months|default:"[]"|escapejs }}');
-  const monthlyRevenue = JSON.parse('{{ monthly_revenue|default:"[]"|escapejs }}');
-  const days = JSON.parse('{{ days|default:"[]"|escapejs }}');
-  const dailyRevenue = JSON.parse('{{ daily_revenue|default:"[]"|escapejs }}');
 
-  // -------------------
-  // Lead Funnel Chart
-  // -------------------
+  const months = JSON.parse('{{ months|escapejs }}');
+  const revenue = JSON.parse('{{ monthly_revenue|escapejs }}');
+  const expense = JSON.parse('{{ monthly_expense|escapejs }}');
+  const profit = JSON.parse('{{ monthly_profit|escapejs }}');
 
-  const funnelChart = new ApexCharts(
-    document.querySelector("#leadFunnelChart"),
-    {
-      chart: {
-        type: "bar",
-        height: 350,
-        toolbar: { show: true }
-      },
-      series: [{
-        name: "Leads",
-        data: leadFunnel
-      }],
-      colors: [
-        "#0d6efd",
-        "#20c997",
-        "#ffc107",
-        "#6610f2",
-        "#fd7e14",
-        "#dc3545"
-      ],
-      plotOptions: {
-        bar: {
-          distributed: true,
-          borderRadius: 6
-        }
-      },
-      xaxis: {
-        categories: [
-          "New",
-          "Contacted",
-          "Qualified",
-          "Proposal",
-          "Negotiation",
-          "Won"
-        ]
-      },
-      tooltip: {
-        y: {
-          formatter: function(val) {
-            return val + " leads";
-          }
-        }
+  const days = JSON.parse('{{ days|escapejs }}');
+  const dailyRevenue = JSON.parse('{{ daily_revenue|escapejs }}');
+
+  // =========================
+  // 🔥 LEAD FUNNEL (Dynamic Colors)
+  // =========================
+  new ApexCharts(document.querySelector("#leadFunnelChart"), {
+    chart: { type: "bar", height: 350 },
+    series: [{ name: "Leads", data: leadFunnel }],
+    colors: leadFunnel.map(() => getRandomColor()),
+    plotOptions: {
+      bar: {
+        distributed: true,
+        borderRadius: 6
+      }
+    },
+    xaxis: {
+      categories: ["New","Contacted","Qualified","Proposal","Negotiation","Won"]
+    },
+    tooltip: {
+      y: {
+        formatter: val => val + " leads"
       }
     }
-  );
-
-  funnelChart.render();
+  }).render();
 
 
-  // -------------------
-  // Monthly Revenue
-  // -------------------
-
-  const revenueChart = new ApexCharts(
-    document.querySelector("#revenueChart"),
-    {
-      chart: {
-        type: "area",
-        height: 350,
-        zoom: { enabled: true }
-      },
-      series: [{
-        name: "Revenue",
-        data: monthlyRevenue
-      }],
-      colors: ["#198754"],
-      stroke: {
-        curve: "smooth",
-        width: 3
-      },
-      fill: {
-        type: "gradient",
-        gradient: {
-          opacityFrom: 0.4,
-          opacityTo: 0.1
-        }
-      },
-      markers: {
-        size: 5
-      },
-      xaxis: {
-        categories: months
-      },
-      tooltip: {
-        y: {
-          formatter: function(val) {
-            return "Rs " + val;
-          }
-        }
+  // =========================
+  // 📊 MONTHLY REVENUE (Dynamic Color)
+  // =========================
+  new ApexCharts(document.querySelector("#revenueChart"), {
+    chart: { type: "area", height: 350 },
+    series: [{ name: "Revenue", data: revenue }],
+    colors: [getRandomColor()],
+    stroke: { curve: "smooth", width: 3 },
+    fill: {
+      type: "gradient",
+      gradient: { opacityFrom: 0.4, opacityTo: 0.1 }
+    },
+    xaxis: { categories: months },
+    tooltip: {
+      y: {
+        formatter: val => "Rs " + val
       }
     }
-  );
-
-  revenueChart.render();
+  }).render();
 
 
-  // -------------------
-  // Daily Revenue
-  // -------------------
-
-  const dailyChart = new ApexCharts(
-    document.querySelector("#dailyRevenueChart"),
-    {
-      chart: {
-        type: "line",
-        height: 350,
-        zoom: { enabled: true }
-      },
-      series: [{
-        name: "Daily Revenue",
-        data: dailyRevenue
-      }],
-      colors: ["#20c997"],
-      stroke: {
-        curve: "smooth",
-        width: 3
-      },
-      markers: {
-        size: 4,
-        hover: {
-          size: 7
-        }
-      },
-      xaxis: {
-        categories: days
-      },
-      tooltip: {
-        y: {
-          formatter: function(val) {
-            return "Rs " + val;
-          }
-        }
+  // =========================
+  // 📊 DAILY REVENUE (Dynamic Color)
+  // =========================
+  new ApexCharts(document.querySelector("#dailyRevenueChart"), {
+    chart: { type: "bar", height: 350 },
+    series: [{ name: "Daily Revenue", data: dailyRevenue }],
+    colors: [getRandomColor()],
+    plotOptions: {
+      bar: { borderRadius: 6, columnWidth: "50%" }
+    },
+    xaxis: { categories: days },
+    tooltip: {
+      y: {
+        formatter: val => "Rs " + val
       }
     }
-  );
+  }).render();
 
-  dailyChart.render();
+
+  // =========================
+  // 💥 PROFIT CHART (SMART COLORS)
+  // =========================
+
+  const profitColor = profit.some(p => p < 0) ? "#ff0000" : "#0d6efd";
+
+  new ApexCharts(document.querySelector("#profitChart"), {
+    chart: { type: "line", height: 350 },
+    series: [
+      { name: "Revenue", data: revenue },
+      { name: "Expenses", data: expense },
+      { name: "Profit", data: profit }
+    ],
+    colors: [
+      "#198754", // Revenue (Green)
+      "#dc3545", // Expense (Red)
+      profitColor // Profit dynamic
+    ],
+    stroke: { curve: "smooth", width: 3 },
+    markers: { size: 5 },
+    fill: {
+      type: "gradient",
+      gradient: { opacityFrom: 0.3, opacityTo: 0.05 }
+    },
+    xaxis: { categories: months },
+    yaxis: {
+      labels: {
+        formatter: val => "Rs " + val
+      }
+    },
+    tooltip: {
+      y: {
+        formatter: val => "Rs " + val
+      }
+    },
+    legend: { position: "top" }
+  }).render();
 
 });
+const users = JSON.parse('{{ sales_users|safe }}');
+const targets = JSON.parse('{{ sales_target|safe }}');
+const achieved = JSON.parse('{{ sales_achieved|safe }}');
+// =========================
+// 🛡️ SAFE DATA
+// =========================
+const safeTargets = targets.map(v => Number(v) || 0);
+const safeAchieved = achieved.map(v => Number(v) || 0);
+
+// =========================
+// 🎨 SMART COLORS (NO NaN)
+// =========================
+const achievedColors = safeAchieved.map((val, i) => {
+  const target = safeTargets[i];
+
+  if (!target) return "#6c757d"; // no target
+
+  const percent = (val / target) * 100;
+
+  if (percent >= 100) return "#198754";
+  if (percent >= 50) return "#ffc107";
+
+  return "#dc3545";
+});
+
+new ApexCharts(document.querySelector("#salesTargetChart"), {
+  chart: {
+    type: "bar",
+    height: 350,
+    toolbar: { show: false }
+  },
+
+  series: [
+    {
+      name: "Target",
+      data: safeTargets
+    },
+    {
+      name: "Achieved",
+      data: safeAchieved
+    }
+  ],
+
+  colors: [
+    "#0d6efd",
+    function({ dataPointIndex }) {
+      return achievedColors[dataPointIndex];
+    }
+  ],
+
+  plotOptions: {
+    bar: {
+      borderRadius: 8,
+      columnWidth: "45%"
+    }
+  },
+
+  dataLabels: {
+    enabled: true,
+    formatter: function(val, opts) {
+      const i = opts.dataPointIndex;
+      const target = safeTargets[i];
+      const ach = safeAchieved[i];
+
+      // Target label
+      if (opts.seriesIndex === 0) return "Rs " + val;
+
+      // Achieved label
+      if (!target) return "No Target";
+
+      const percent = ((ach / target) * 100).toFixed(0);
+      return percent + "%";
+    }
+  },
+
+  xaxis: {
+    categories: users
+  },
+
+  tooltip: {
+    y: {
+      formatter: val => "Rs " + val
+    }
+  },
+
+  legend: {
+    position: "top"
+  }
+
+}).render();
 </script>

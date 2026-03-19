@@ -58,110 +58,296 @@ def logout_view(request):
 
 
 def dashboard(request):
-    selected_month = request.GET.get("month")
-    dashboard_data = DashboardData(request.user)
-    revenue_data = RevenueDashboard(selected_month)
-    today = timezone.localdate()   
-    total_leads = Lead.objects.count()
-    deals_won = Lead.objects.filter(status="won").count()
-    total_revenue = (DealInstallment.objects.aggregate(total=Sum("amount")).get("total") or 0)
-    followups_today = LeadFollowUp.objects.filter(next_followup_date=today,is_completed=False).count()
-    followups_today_list = LeadFollowUp.objects.filter(next_followup_date=today,is_completed=False).select_related("lead", "created_by")[:10]
-    leaderboard = (DealInstallment.objects.values("deal__lead__assigned_to__username").annotate(revenue=Sum("amount")).order_by("-revenue")[:5])
-    today = timezone.localdate()
-    current_year = today.year
-    current_month = today.month
-    days = []
-    daily_revenue = []
-
-    daily_data = (
-        DealInstallment.objects
-        .filter(
-            payment_date__year=current_year,
-            payment_date__month=current_month
-        )
-        .annotate(day=TruncDate("payment_date"))
-        .values("day")
-        .annotate(total=Sum("amount"))
-        .order_by("day")
-    )
-
-    for item in daily_data:
-
-        if item["day"]:
-            days.append(item["day"].strftime("%d %b"))
-            daily_revenue.append(float(item["total"] or 0))
-
-    print(days)    
-
-    for s in leaderboard:
-        s["user"] = s["deal__lead__assigned_to__username"]
-    lead_funnel = [
-        Lead.objects.filter(status="new").count(),
-        Lead.objects.filter(status="contacted").count(),
-        Lead.objects.filter(status="qualified").count(),
-        Lead.objects.filter(status="proposal").count(),
-        Lead.objects.filter(status="negotiation").count(),
-        Lead.objects.filter(status="won").count(),
-    ]
-   
-    lead_labels = json.dumps([
-        "New",
-        "Contacted",
-        "Qualified",
-        "Proposal",
-        "Negotiation",
-        "Won"
-    ])
-
-    lead_values = json.dumps(lead_funnel)
-
-    # -------------------
-    # CONTEXT
-    # -------------------
-
-    context = {
-
-        # dashboard cards
-        "total_leads": total_leads,
-        "deals_won": deals_won,
-        "revenue": total_revenue,
-        "followups_today": followups_today,
-
-        # followups
-        "followups_today_list": followups_today_list,
-            "leaderboard": leaderboard,
+    try:
+        selected_month = request.GET.get("month")
+        dashboard_data = DashboardData(request.user)
+        revenue_data = RevenueDashboard(selected_month)
+        today = timezone.localdate()   
+        total_leads = Lead.objects.count()
+        deals_won = Lead.objects.filter(status="won").count()
+        followups_today = LeadFollowUp.objects.filter(next_followup_date=today,is_completed=False).count()
+        followups_today_list = LeadFollowUp.objects.filter(next_followup_date=today,is_completed=False).select_related("lead", "created_by")[:10]
+        leaderboard = (DealInstallment.objects.values("deal__lead__assigned_to__username").annotate(revenue=Sum("amount")).order_by("-revenue")[:5])
+        
+        total_revenue = (DealInstallment.objects.aggregate(total=Sum("amount")).get("total") or 0)
+        total_commission = (Commission.objects.aggregate(total=Sum("amount")).get("total") or 0)
+        total_expenses = (Expense.objects.aggregate(total=Sum("amount")).get("total") or 0)
+        net_profit = total_revenue - total_commission - total_expenses
+      
+        lead_funnel = [
+            Lead.objects.filter(status="new").count(),
+            Lead.objects.filter(status="contacted").count(),
+            Lead.objects.filter(status="qualified").count(),
+            Lead.objects.filter(status="proposal").count(),
+            Lead.objects.filter(status="negotiation").count(),
+            Lead.objects.filter(status="won").count(),
+        ]
     
-        # lead funnel
-        "lead_labels": lead_labels,
-        "lead_values": lead_values,
+        lead_labels = json.dumps([
+            "New",
+            "Contacted",
+            "Qualified",
+            "Proposal",
+            "Negotiation",
+            "Won"
+        ])
 
-        # revenue stats
-        "today_revenue": revenue_data["today"],
-        "yesterday_revenue": revenue_data["yesterday"],
-        "this_month_revenue": revenue_data["this_month"],
-        "this_year_revenue": revenue_data["this_year"],
+        lead_values = json.dumps(lead_funnel)
 
-        # daily chart
-        "days": revenue_data["days"],
-        "daily_revenue": revenue_data["daily"],
+        # -------------------
+        # CONTEXT
+        # -------------------
 
-        # monthly chart
-        "months": revenue_data["months"],
-        "monthly_revenue": revenue_data["monthly"],
+        context = {
 
-        # filters
-        "selected_month": selected_month,
+            # dashboard cards
+            "total_leads": total_leads,
+            "deals_won": deals_won,
+            "revenue": total_revenue,
+            "expense": total_expenses,
+            "commission": total_commission,
+            "net_profit": net_profit,
+            
+            
+            "followups_today": followups_today,
 
-        # extra dashboard data
-        "dashboard_data": dashboard_data,
-        "days" : json.dumps(days),
-        "daily_revenue" : json.dumps(daily_revenue)
-    }
-   
+            # followups
+            "followups_today_list": followups_today_list,
+            "leaderboard": leaderboard,
+        
+            # lead funnel
+            "lead_labels": lead_labels,
+            "lead_values": lead_values,
 
-    return render(request, "index.html", context)
+            # revenue stats
+            "today_revenue": revenue_data["today"],
+            "yesterday_revenue": revenue_data["yesterday"],
+            "this_month_revenue": revenue_data["this_month"],
+            "this_year_revenue": revenue_data["this_year"],
 
+            # daily chart
+            "days": revenue_data["days"],
+            "daily_revenue": revenue_data["daily"],
+
+            # monthly chart
+            "months": revenue_data["months"],
+            "monthly_revenue": revenue_data["monthly"],
+
+            # filters
+            "selected_month": selected_month,
+
+            # extra dashboard data
+            "dashboard_data": dashboard_data,
+        }
+                
+                  # =========================
+        # MONTHLY REVENUE (Deal आधारित)
+        # =========================
+        monthly_revenue_qs = (
+            Deal.objects
+            .filter(payment_status='paid')
+            .annotate(month=TruncMonth('payment_date'))
+            .values('month')
+            .annotate(total=Sum('deal_value'))
+        )
+
+        # =========================
+        # MONTHLY EXPENSES
+        # =========================
+        monthly_expenses_qs = (
+            Expense.objects
+            .annotate(month=TruncMonth('expense_date'))
+            .values('month')
+            .annotate(total=Sum('amount'))
+        )
+
+        # =========================
+        # MONTHLY COMMISSION (Deal आधारित)
+        # =========================
+        monthly_commission_qs = (
+            Deal.objects
+            .filter(payment_status='paid')
+            .annotate(month=TruncMonth('payment_date'))
+            .values('month')
+            .annotate(total=Sum('deal_value'))  # 🔁 confirm field name
+        )
+
+        # =========================
+        # MERGE DATA (IMPORTANT)
+        # =========================
+        profit_data = {}
+
+        # Revenue
+        for r in monthly_revenue_qs:
+            profit_data[r['month']] = {
+                'revenue': r['total'] or 0,
+                'expense': 0,
+                'commission': 0
+            }
+
+        # Expenses
+        for e in monthly_expenses_qs:
+            profit_data.setdefault(e['month'], {'revenue': 0, 'expense': 0, 'commission': 0})
+            profit_data[e['month']]['expense'] = e['total'] or 0
+
+        # Commission
+        for c in monthly_commission_qs:
+            profit_data.setdefault(c['month'], {'revenue': 0, 'expense': 0, 'commission': 0})
+            profit_data[c['month']]['commission'] = c['total'] or 0
+
+        # =========================
+        # CALCULATE PROFIT
+        # =========================
+        for month in profit_data:
+            data = profit_data[month]
+            data['profit'] = data['revenue'] - data['expense'] - data['commission']
+
+        # =========================
+        # CONVERT FOR CHART (CRITICAL)
+        # =========================
+        months = []
+        monthly_revenue = []
+        monthly_expense = []
+        monthly_profit = []
+
+        for month in sorted(profit_data.keys()):
+            months.append(month.strftime('%b'))
+
+            monthly_revenue.append(float(profit_data[month]['revenue']))
+            monthly_expense.append(float(profit_data[month]['expense']))
+            monthly_profit.append(float(profit_data[month]['profit']))
+
+        # =========================
+        # DAILY REVENUE (CURRENT MONTH)
+        # =========================
+        today = timezone.localdate()
+        current_year = today.year
+        current_month = today.month
+
+        days = []
+        daily_revenue = []
+
+        daily_qs = (
+            Deal.objects
+            .filter(
+                payment_status='paid',
+                payment_date__year=current_year,
+                payment_date__month=current_month
+            )
+            .annotate(day=TruncDate('payment_date'))
+            .values('day')
+            .annotate(total=Sum('deal_value'))
+            .order_by('day')
+        )
+
+        for item in daily_qs:
+            if item["day"]:
+                days.append(item["day"].strftime("%d %b"))
+                daily_revenue.append(float(item["total"] or 0))
+
+        # =========================
+        # TOTALS (TOP CARDS)
+        # =========================
+        total_revenue = Deal.objects.filter(payment_status='paid').aggregate(
+            total=Sum('deal_value')
+        )['total'] or 0
+
+        total_expenses = Expense.objects.aggregate(
+            total=Sum('amount')
+        )['total'] or 0
+
+        total_commission = Deal.objects.filter(payment_status='paid').aggregate(
+            total=Sum('deal_value')  # 🔁 confirm field
+        )['total'] or 0
+
+        net_profit = total_revenue - total_expenses - total_commission
+
+        # =========================
+        # LEADERBOARD FIX
+        # =========================
+        for s in leaderboard:
+            s["user"] = s.get("deal__lead__assigned_to__username", "N/A")
+
+        context.update({
+            "months": json.dumps(months),
+            "monthly_revenue": json.dumps(monthly_revenue),
+            "monthly_expense": json.dumps(monthly_expense),
+            "monthly_profit": json.dumps(monthly_profit),
+        })
+        
+
+        current_month = timezone.now().month
+        current_year = timezone.now().year
+
+        # =========================
+        # 🎯 TARGETS (INTEGER MONTH)
+        # =========================
+        targets = SalesTarget.objects.filter(
+            month=current_month
+        ).values(
+            'user__username'
+        ).annotate(
+            target=Sum('target_amount')
+        )
+
+        # =========================
+        # 💰 ACHIEVED
+        # =========================
+        achieved = Deal.objects.filter(
+            payment_status='paid',
+            payment_date__month=current_month,
+            payment_date__year=current_year
+        ).values(
+            'created_by__username'
+        ).annotate(
+            achieved=Sum('deal_value')
+        )
+
+        # =========================
+        # 🧠 MERGE DATA (FIXED)
+        # =========================
+        data = {}
+
+        # targets
+        for t in targets:
+            user = t['user__username']
+            data[user] = {
+                'target': float(t['target'] or 0),
+                'achieved': 0
+            }
+
+        # achieved (SEPARATE LOOP ✅)
+        for a in achieved:
+            user = a['created_by__username']
+            if user not in data:
+                data[user] = {'target': 0, 'achieved': 0}
+
+            data[user]['achieved'] = float(a['achieved'] or 0)
+
+        # =========================
+        # 📊 FINAL LISTS
+        # =========================
+        users = []
+        target_list = []
+        achieved_list = []
+
+        for user, val in data.items():
+            users.append(user)
+            target_list.append(val['target'])
+            achieved_list.append(val['achieved'])
+
+        # =========================
+        # 📦 CONTEXT
+        # =========================
+        context.update({
+            "sales_users": json.dumps(users),
+            "sales_target": json.dumps(target_list),
+            "sales_achieved": json.dumps(achieved_list),
+        })  
+        #return HttpResponse(str(context))
+        return render(request, "index.html", context)
+    except Exception as e:
+        return HttpResponse(str("Exception : " + str(e)))
 @login_required
 def ViewLead(request):
 
