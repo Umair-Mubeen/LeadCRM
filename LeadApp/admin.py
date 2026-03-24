@@ -15,3 +15,9 @@ class SalesTargetAdmin(admin.ModelAdmin):
     )
 
     list_filter = ("month", "year")
+
+
+
+class CommissionAdmin(admin.ModelAdmin):
+    list_display = ("user", "amount", "is_paid", "created_at")
+    list_filter = ("is_paid",)

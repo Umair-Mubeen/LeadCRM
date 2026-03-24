@@ -73,7 +73,26 @@
          name="deal_value"
          class="form-control"
          value="{% if deal %}{{ deal.deal_value }}{% endif %}"
+
          required>
+</div>
+
+
+<div class="mb-3">
+  <label class="form-label">Assign Salesman *</label>
+  <select name="salesman" class="form-control" required>
+    <option value="">-- Select Salesman --</option>
+
+        {% for user in users %}
+      <option value="{{ user.id }}"
+        {% if deal.salesman and user.id == deal.salesman.id %}
+          selected
+        {% endif %}
+      >
+        {{ user.username }}
+      </option>
+    {% endfor %}
+  </select>
 </div>
 
 <!-- Closing Date -->

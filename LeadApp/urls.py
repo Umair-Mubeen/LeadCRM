@@ -39,4 +39,7 @@ path("AddEditExpense", views.AddEditExpense, name="AddExpense"),
 path("AddEditExpense/edit/<int:id>/",views.AddEditExpense, name="AddEditExpense"),
 path("expense/delete/<int:id>/", views.DeleteExpense, name="expense_delete"),
 
+path("sales-chart-data/", views.sales_chart_data, name="sales_chart_data"),
+path("multi-sales-chart/", views.multi_user_sales_chart, name="multi_sales_chart"),
+
 ]

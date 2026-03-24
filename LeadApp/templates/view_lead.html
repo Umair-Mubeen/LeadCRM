@@ -171,14 +171,15 @@
                     </td>
 
                     <td>
-                      <button
-                        class="btn btn-sm btn-outline-secondary"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#collapse{{ lead.id }}"
-                        aria-expanded="false"
-                      >
-                        <i class="bi bi-chevron-down"></i>
-                      </button>
+                    <button
+  class="btn btn-sm btn-outline-secondary"
+  data-bs-toggle="collapse"
+  data-bs-target="#collapse{{ lead.id }}"
+  aria-expanded="false"
+  {% if request.user.profile.is_lgs %}disabled{% endif %}
+>
+  <i class="bi bi-chevron-down"></i>
+</button> 
                     </td>
                   </tr>
 

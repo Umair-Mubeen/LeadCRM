@@ -112,7 +112,7 @@ Duration: {{ call.call_duration }} sec
 {% if call.updated_by %}
 {{ call.updated_by.username }}
 {% else %}
-System
+  System
 {% endif %}
 
 </div>
@@ -217,21 +217,22 @@ Deal Value: ${{ lead.deal.deal_value }}
 <p>
 
 <strong>Assigned To:</strong>
-
-{% if lead.assigned_to.all %}
-    
-    {% for user in lead.assigned_to.all %}
-        <span class="badge bg-primary">{{ user.username }}</span>
-    {% endfor %}
+{% if request.user.profile.is_admin %}
+    {% if lead.assigned_to.all %}
+        
+        {% for user in lead.assigned_to.all %}
+            <span class="badge bg-primary">{{ user.username }}</span>
+        {% endfor %}
 
 {% else %}
 
     <span class="text-muted">Open</span>
 
 {% endif %}
+{% endif %}
 
 
-{% if request.user.profile.is_admin %}
+<!-- {% if request.user.profile.is_admin %}
 
 <a
 class="btn btn-sm btn-outline-primary ms-2"
@@ -243,7 +244,7 @@ title="Edit Assignment"
 
 </a>
 
-{% endif %}
+{% endif %} -->
 
 </p>
 <p>

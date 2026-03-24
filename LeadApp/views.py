@@ -20,6 +20,9 @@ from datetime import datetime
 import json
 from .models import UserProfile, Lead, LeadFollowUp, LeadStatusHistory, Deal, Commission, DealInstallment, SalesTarget, CallLog, Expense
 from django.utils.timezone import now
+from decimal import Decimal, InvalidOperation
+from django.http import JsonResponse
+from calendar import month_name
 
 def role_required(allowed_roles):
     def decorator(view_func):
@@ -59,6 +62,7 @@ def logout_view(request):
 
 def dashboard(request):
     try:
+        has_paid_deals = Deal.objects.filter(payment_status="paid").exists()
         selected_month = request.GET.get("month")
         dashboard_data = DashboardData(request.user)
         revenue_data = RevenueDashboard(selected_month)
@@ -68,7 +72,6 @@ def dashboard(request):
         followups_today = LeadFollowUp.objects.filter(next_followup_date=today,is_completed=False).count()
         followups_today_list = LeadFollowUp.objects.filter(next_followup_date=today,is_completed=False).select_related("lead", "created_by")[:10]
         leaderboard = (DealInstallment.objects.values("deal__lead__assigned_to__username").annotate(revenue=Sum("amount")).order_by("-revenue")[:5])
-        
         total_revenue = (DealInstallment.objects.aggregate(total=Sum("amount")).get("total") or 0)
         total_commission = (Commission.objects.aggregate(total=Sum("amount")).get("total") or 0)
         total_expenses = (Expense.objects.aggregate(total=Sum("amount")).get("total") or 0)
@@ -82,6 +85,7 @@ def dashboard(request):
             Lead.objects.filter(status="negotiation").count(),
             Lead.objects.filter(status="won").count(),
         ]
+        print(lead_funnel)
     
         lead_labels = json.dumps([
             "New",
@@ -138,6 +142,7 @@ def dashboard(request):
 
             # extra dashboard data
             "dashboard_data": dashboard_data,
+            "has_paid_deals" : has_paid_deals,
         }
                 
                   # =========================
@@ -348,6 +353,7 @@ def dashboard(request):
         return render(request, "index.html", context)
     except Exception as e:
         return HttpResponse(str("Exception : " + str(e)))
+
 @login_required
 def ViewLead(request):
 
@@ -394,8 +400,7 @@ def AddEditLead(request, leadId=None):
 
     lead = None
     next_url = request.GET.get("next") or request.POST.get("next")
-    print("next_ur : ", next_url)
-
+   
  
     if leadId:
         lead = get_object_or_404(Lead, id=leadId, is_deleted=False)
@@ -447,7 +452,7 @@ def AddEditLead(request, leadId=None):
                     changed_by=request.user
                 )
 
-            messages.success(request, "Lead updated successfully.")
+            #messages.success(request, "Lead updated successfully.")
 
  
         # CREATE LEAD
@@ -455,7 +460,7 @@ def AddEditLead(request, leadId=None):
         else:
             lead = Lead.objects.create(**form_data,lead_created_by=request.user )
 
-            messages.success(request, "Lead created successfully.")
+            #messages.success(request, "Lead created successfully.")
 
         # ManyToMany update
         lead.assigned_to.set(valid_users)
@@ -463,7 +468,6 @@ def AddEditLead(request, leadId=None):
         
         # SAFE REDIRECT LOGIC
         collapse_hash = f"#collapse{lead.id}"
-        print("collapse_hash", collapse_hash)
         viewlead_url = reverse("ViewLead")
         
 
@@ -472,7 +476,6 @@ def AddEditLead(request, leadId=None):
             return redirect( f"{viewlead_url}?status=won{collapse_hash}")
 
         if next_url and next_url != "None":
-            print(f"{next_url}{collapse_hash}")
             return redirect(
                 f"{next_url}{collapse_hash}"
             )
@@ -607,8 +610,8 @@ def AddEditUser(request):
 def CreateDeal(request, lead_id):
 
     lead = get_object_or_404(Lead, id=lead_id)
+    users = User.objects.filter(profile__role="SALESMAN")
     next_url = request.GET.get("next") or request.POST.get("next")
-
 
     if not request.user.profile.is_admin:
         return redirect("dashboard")
@@ -620,20 +623,28 @@ def CreateDeal(request, lead_id):
         deal_value = Decimal(request.POST.get("deal_value") or 0)
         closing_date = request.POST.get("closing_date")
         notes = request.POST.get("notes")
+        userId = request.POST.get("salesman")
 
         if deal:
             deal.deal_value = deal_value
             deal.closing_date = closing_date
             deal.notes = notes
+            deal.salesman_id = userId
+            deal.save()
         else:
             deal = Deal.objects.create(
                 lead=lead,
                 deal_value=deal_value,
                 closing_date=closing_date,
                 notes=notes,
+                salesman_id=userId,
                 created_by=request.user
             )
 
+        # 🔥 SYNC LOGIC (IMPORTANT)
+        if userId:
+            # ensure in assigned_to (ManyToMany)
+           deal.lead.assigned_to.set([userId])
         deal.update_payment_status()
 
         if next_url:
@@ -642,14 +653,15 @@ def CreateDeal(request, lead_id):
 
     return render(request, "CreateDeal.html", {
         "lead": lead,
-        "deal": deal
+        "deal": deal,
+        "users": users
     })
 @login_required
 def UpdateDeal(request, deal_id):
 
     deal = get_object_or_404(Deal, id=deal_id)
     next_url = request.GET.get("next") or request.POST.get("next")
-
+    users = User.objects.filter(profile__role="SALESMAN")
 
     if not request.user.profile.is_admin:
         return redirect("dashboard")
@@ -657,35 +669,80 @@ def UpdateDeal(request, deal_id):
     if request.method == "POST":
 
         deal_value = Decimal(request.POST.get("deal_value") or deal.deal_value)
+        closing_date = request.POST.get("closing_date") or deal.closing_date
+        notes = request.POST.get("notes")
+        userId = request.POST.get("salesman")
 
+        # ✅ Update deal
         deal.deal_value = deal_value
+        deal.closing_date = closing_date
+        deal.notes = notes
+        deal.salesman_id = userId
+
+        deal.save()
+
+        # ✅ Update ManyToMany table ONLY
+        if userId:
+            deal.lead.assigned_to.set([userId])
+
         deal.update_payment_status()
+
         if next_url:
             url = f"#collapse{deal.lead.id}"
             return redirect(next_url + url)
-      
 
     return render(request, "CreateDeal.html", {
-        "deal": deal
+        "deal": deal,
+        "lead": deal.lead,
+        "users": users
     })
 
 @login_required
 def AddInstallment(request, deal_id):
 
     deal = get_object_or_404(Deal, id=deal_id)
-    
+
     if not request.user.profile.is_admin:
+        messages.error(request, "Unauthorized access")
         return redirect("dashboard")
 
     next_url = request.GET.get("next") or request.POST.get("next")
 
     if request.method == "POST":
 
-        amount = Decimal(request.POST.get("amount") or 0)
+        amount_input = request.POST.get("amount")
         note = request.POST.get("note")
-        payment_date = request.POST.get("payment_date")
-    
+        payment_date_str = request.POST.get("payment_date")
+        payment_date = datetime.strptime(payment_date_str, "%Y-%m-%d").date()
 
+
+        try:
+            amount = Decimal(amount_input)
+        except (InvalidOperation, TypeError):
+            messages.error(request, "Invalid amount format")
+            return redirect(request.path)
+
+        if amount <= 0:
+            messages.error(request, "Amount must be greater than 0")
+            return redirect(request.path)
+
+        current_total = deal.installments.aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+
+        new_total = current_total + amount
+        deal_value = deal.deal_value
+
+        if new_total > deal_value:
+            remaining = deal_value - current_total
+
+            messages.error(
+                request,
+                f"Amount exceeds deal limit. You can only add Rs {remaining}"
+            )
+            return redirect(request.path)
+
+ 
         DealInstallment.objects.create(
             deal=deal,
             amount=amount,
@@ -694,7 +751,11 @@ def AddInstallment(request, deal_id):
             created_by=request.user
         )
 
-        deal.update_payment_status()
+ 
+        if hasattr(deal, "update_payment_status"):
+            deal.update_payment_status()
+
+            messages.success(request, "Installment added successfully")
 
         if next_url:
             url = f"#collapse{deal.lead.id}"
@@ -706,7 +767,6 @@ def AddInstallment(request, deal_id):
         "deal": deal,
         "next": next_url
     })
-
 
 @login_required
 def DeleteInstallment(request, installment_id):
@@ -733,6 +793,7 @@ def DeleteInstallment(request, installment_id):
     return redirect("ViewLead")
 
 
+
 @transaction.atomic
 def EditInstallment(request, installment_id):
 
@@ -743,15 +804,56 @@ def EditInstallment(request, installment_id):
     )
 
     if not request.user.profile.is_admin:
+        messages.error(request, "Unauthorized access")
         return redirect("dashboard")
 
     next_url = request.GET.get("next") or request.POST.get("next")
 
     if request.method == "POST":
 
-        new_amount = Decimal(request.POST.get("amount") or 0)
+        amount_input = request.POST.get("amount")
+        payment_date_str = request.POST.get("payment_date")
+        payment_date = datetime.strptime(payment_date_str, "%Y-%m-%d").date()
 
-        MonthlyTargetAchieved(request,installment_id,new_amount)
+
+        try:
+            new_amount = Decimal(amount_input)
+        except (InvalidOperation, TypeError):
+            messages.error(request, "Invalid amount format")
+            return redirect(request.path)
+
+        if new_amount <= 0:
+            messages.error(request, "Amount must be greater than 0")
+            return redirect(request.path)
+
+        other_total = installment.deal.installments.exclude(
+            id=installment.id
+        ).aggregate(total=Sum("amount"))["total"] or 0
+
+        new_total = other_total + new_amount
+        deal_value = installment.deal.deal_value
+
+        if new_total > deal_value:
+            remaining = deal_value - other_total
+
+            messages.error(
+                request,
+                f"Amount exceeds limit. You can only add up to Rs {remaining}"
+            )
+            return redirect(request.path)
+
+        old_amount = installment.amount
+
+        installment.amount = new_amount
+        installment.payment_date = payment_date
+        if hasattr(installment, "updated_by"):
+            installment.updated_by = request.user
+
+        installment.save()
+
+
+        messages.success(request, "Installment updated successfully")
+
         if next_url:
             url = f"#collapse{installment.deal.lead.id}"
             return redirect(next_url + url)
@@ -763,6 +865,7 @@ def EditInstallment(request, installment_id):
         "deal": installment.deal,
         "next": next_url
     })
+
 
 
 @login_required
@@ -873,8 +976,7 @@ def AddSalesTarget(request, userId):
 def SalesLeaderBoard(request):
     try:
         sales_leaderboard = SalesLeaderboard(request)
-        print(sales_leaderboard)
-
+       
         return render(
             request,
             'SaleLeaderBoard.html',sales_leaderboard
@@ -915,10 +1017,10 @@ def add_call_log(request, lead_id):
                 call_duration=request.POST.get("call_duration") or None,
                 notes=request.POST.get("notes"),
                 next_followup_date=request.POST.get("next_followup_date") or None,
+                updated_by=request.user 
             )
 
-    print('next_url :-', next_url)
-
+ 
     if next_url:
         return redirect(next_url)
 
@@ -975,8 +1077,7 @@ def AddEditExpense(request, id=None):
 
     if id:
         expense = get_object_or_404(Expense, id=id,is_deleted=False)
-        print(expense)
-
+  
     if request.method == "POST":
 
         title = request.POST.get("title")
@@ -1024,3 +1125,59 @@ def DeleteExpense(request, id):
     expense = get_object_or_404(Expense,id=id)
     expense.soft_delete(request.user) 
     return redirect("ViewExpenses")
+
+
+
+def sales_chart_data(request):
+
+    targets = SalesTarget.objects.select_related("user").order_by("year", "month")
+
+    labels = []
+    target_data = []
+    achieved_data = []
+
+    for t in targets:
+        label = f"{t.user.username} - {t.get_month_display()}"
+        labels.append(label)
+
+        target_data.append(float(t.target_amount))
+        achieved_data.append(float(t.achieved_amount))
+
+    return JsonResponse({
+        "labels": labels,
+        "targets": target_data,
+        "achieved": achieved_data
+    })
+
+
+
+def multi_user_sales_chart(request):
+
+    users = User.objects.filter(profile__role="SALESMAN")
+
+    months = [month_name[m] for m in range(1, 13)]
+
+    series = []
+
+    for user in users:
+        targets = SalesTarget.objects.filter(user=user)
+
+        data_map = {t.month: t for t in targets}
+
+        achieved_list = []
+
+        for m in range(1, 13):
+            if m in data_map:
+                achieved_list.append(float(data_map[m].achieved_amount))
+            else:
+                achieved_list.append(0)
+
+        series.append({
+            "name": user.username,
+            "data": achieved_list
+        })
+
+    return JsonResponse({
+        "months": months,
+        "series": series
+    })

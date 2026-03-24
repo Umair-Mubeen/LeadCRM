@@ -5,7 +5,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.db.models import Sum
 from django.db import models
-
+from django.db.models import Q
 
 class ActiveManager(models.Manager):
     def get_queryset(self):
@@ -353,9 +353,15 @@ class Deal(SoftDeleteModel):
         decimal_places=2
     )
 
-    # ==============================
-    # PAYMENT STATUS
-    # ==============================
+    # ✅ NEW FIELD (IMPORTANT)
+    salesman = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="deals_closed"
+    )
+
     PAYMENT_CHOICES = [
         ('pending', 'Pending'),
         ('partial', 'Partial'),
@@ -369,10 +375,6 @@ class Deal(SoftDeleteModel):
         db_index=True
     )
 
-    # ==============================
-    # NEW FIELD → PARTIAL PAYMENT
-    # ==============================
-    
     closing_date = models.DateField()
 
     payment_date = models.DateField(
@@ -380,10 +382,7 @@ class Deal(SoftDeleteModel):
         blank=True
     )
 
-    notes = models.TextField(
-        blank=True,
-        null=True
-    )
+    notes = models.TextField(blank=True, null=True)
 
     created_by = models.ForeignKey(
         User,
@@ -394,7 +393,7 @@ class Deal(SoftDeleteModel):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+ 
     class Meta:
         ordering = ['-created_at']
         indexes = [
@@ -472,16 +471,10 @@ class DealInstallment(SoftDeleteModel):
         decimal_places=2
     )
 
-    payment_date = models.DateField(
-        default=timezone.now
-    )
+    payment_date = models.DateField(default=timezone.now)
 
-    note = models.TextField(
-        blank=True,
-        null=True
-    )
+    note = models.TextField(blank=True, null=True)
 
-    # ✅ NEW FIELD
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -490,9 +483,7 @@ class DealInstallment(SoftDeleteModel):
         related_name="installments_created"
     )
 
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-payment_date']
@@ -500,9 +491,67 @@ class DealInstallment(SoftDeleteModel):
     def __str__(self):
         return f"{self.deal.lead.full_name} - ${self.amount}"
 
+    # ✅ UPDATED SAVE METHOD
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+
+        super().save(*args, **kwargs)
+
+        # 🔥 STEP 1: Update deal payment status
+        self.deal.update_payment_status()
+
+        # 🔥 STEP 2: Create commission (ONLY on new installment)
+        if is_new:
+            salesman = self.deal.salesman
+
+            if not salesman:
+                return
+
+
+            
 
 class Commission(SoftDeleteModel):
 
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="commissions"
+    )
+
+    installment = models.ForeignKey(
+        DealInstallment,
+        on_delete=models.CASCADE,
+        related_name="commissions",
+        null=True,
+        blank=True,
+    )
+
+    percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2
+    )
+
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2
+    )
+
+    is_paid = models.BooleanField(default=False)
+
+    paid_at = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "installment")
+
+    def mark_as_paid(self):
+        self.is_paid = True
+        self.paid_at = timezone.now()
+        self.save(update_fields=["is_paid", "paid_at"])
+
+    def __str__(self):
+        return f"{self.user.username} - {self.amount}"
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -600,19 +649,15 @@ class SalesTarget(models.Model):
     @property
     def achieved_amount(self):
 
-        from .models import DealInstallment
-
         total = DealInstallment.objects.filter(
-            deal__created_by=self.user,
-            payment_date__month=self.month,
-            payment_date__year=self.year,
-            is_deleted=False
-        ).aggregate(
-            total=Sum("amount")
-        )["total"]
-
+    Q(deal__salesman=self.user) |
+    Q(deal__lead__assigned_to=self.user),
+    payment_date__month=self.month,
+    payment_date__year=self.year,
+    is_deleted=False
+).aggregate(total=Sum("amount"))["total"]
+        
         return total or Decimal("0.00")
-
     # ===============================
     # REMAINING TARGET
     # ===============================

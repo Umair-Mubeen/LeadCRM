@@ -126,12 +126,14 @@
                       <p>View Lead</p>
                     </a>
                   </li>
+{% if request.user.profile.is_admin and has_paid_deals != "None" %}
 <li class="nav-item">
     <a href="{% url 'ViewLead' %}?status=won" class="nav-link">
         <i class="nav-icon bi bi-circle"></i>
         <p>Converted Lead</p>
     </a>
 </li>
+{% endif %}
               {% if user.is_superuser and user.profile.role != "LGS" %}
 
 <li class="nav-item">
