@@ -11,7 +11,7 @@ from django.db.models import Count, Sum
 from django.db.models import Prefetch
 from django.db.models.functions import TruncMonth, TruncDate
 from decimal import Decimal
-from .graph import RevenueDashboard, MonthlySalesTarget, SalesLeaderboard,LeadFunnel,DashboardData
+from .graph import RevenueDashboard, MonthlySalesTarget, Sales_Leader_board,LeadFunnel,DashboardData
 from django.db.models import Q
 from django.db import transaction
 from django.contrib import messages
@@ -77,6 +77,23 @@ def dashboard(request):
         total_expenses = (Expense.objects.aggregate(total=Sum("amount")).get("total") or 0)
         net_profit = total_revenue - total_commission - total_expenses
       
+
+
+        roles = ["ADMIN", "LGS", "SALESMAN"]
+
+        user_counts = (
+            UserProfile.objects
+            .filter(role__in=roles)
+            .values("role")
+            .annotate(count=Count("id"))
+        )
+      
+        user_count_dict = {item["role"]: item["count"] for item in user_counts}
+        userList = [user_count_dict.get(role, 0) for role in roles]
+        user_labels = json.dumps(["Admin", "LGS", "Sales Man"])
+        user_values = json.dumps(userList)
+      
+         
         lead_funnel = [
             Lead.objects.filter(status="new").count(),
             Lead.objects.filter(status="contacted").count(),
@@ -85,8 +102,8 @@ def dashboard(request):
             Lead.objects.filter(status="negotiation").count(),
             Lead.objects.filter(status="won").count(),
         ]
-        print(lead_funnel)
-    
+     
+       
         lead_labels = json.dumps([
             "New",
             "Contacted",
@@ -97,10 +114,6 @@ def dashboard(request):
         ])
 
         lead_values = json.dumps(lead_funnel)
-
-        # -------------------
-        # CONTEXT
-        # -------------------
 
         context = {
 
@@ -123,6 +136,9 @@ def dashboard(request):
             "lead_labels": lead_labels,
             "lead_values": lead_values,
 
+            "user_labels": user_labels,  
+            "user_values": user_values,   
+           
             # revenue stats
             "today_revenue": revenue_data["today"],
             "yesterday_revenue": revenue_data["yesterday"],
@@ -352,6 +368,7 @@ def dashboard(request):
         #return HttpResponse(str(context))
         return render(request, "index.html", context)
     except Exception as e:
+        print(str("Exception : " + str(e)))
         return HttpResponse(str("Exception : " + str(e)))
 
 @login_required
@@ -975,7 +992,7 @@ def AddSalesTarget(request, userId):
 @login_required
 def SalesLeaderBoard(request):
     try:
-        sales_leaderboard = SalesLeaderboard(request)
+        sales_leaderboard = Sales_Leader_board()
        
         return render(
             request,

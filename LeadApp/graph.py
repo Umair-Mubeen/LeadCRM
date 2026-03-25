@@ -181,7 +181,7 @@ def MonthlySalesTarget(user):
 
 
 
-def SalesLeaderboard():
+def Sales_Leader_board():
 
     today = timezone.localdate()
 
@@ -237,7 +237,6 @@ def SalesLeaderboard():
         row["progress"] = progress
 
         data.append(row)
-
     return {"sales_leaderboard": data}
 
 
@@ -273,7 +272,7 @@ def DashboardData(user):
 
     context.update(RevenueDashboard())
     context.update(MonthlySalesTarget(user))
-    context.update(SalesLeaderboard())
+    context.update(Sales_Leader_board())
     context.update(LeadFunnel())
 
     return context

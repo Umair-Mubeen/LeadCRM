@@ -1,3 +1,4 @@
+
 <style>
   /* ===== GLOBAL ===== */
   body {
@@ -96,8 +97,8 @@
   }
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.min.js"></script>
 
+{% if request.user.profile.is_admin  %}
 <main class="app-main">
   <div class="container-fluid mt-4">
     <div class="row g-3">
@@ -142,37 +143,45 @@
     <br />
 
     <!-- CHARTS -->
-
+      
     <div class="row section g-3">
-      <div class="col-lg-6">
-        <div class="card">
-          <div class="card-header">Lead Funnel</div>
-          <div class="card-body">
-            <div id="leadFunnelChart"></div>
+
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header">User</div>
+            <div class="card-body">
+              <div id="UserChart"></div>
+            </div>
+          </div>
+
+        </div> 
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header">Lead Funnel</div>
+            <div class="card-body">
+              <div id="leadFunnelChart"></div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="col-lg-6">
-        <div class="card">
-          <div class="card-header">Monthly Revenue</div>
-          <div class="card-body">
-            <div id="revenueChart"></div>
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header">Monthly Revenue</div>
+            <div class="card-body">
+              <div id="revenueChart"></div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <div class="row section g-3">
-      <div class="col-lg-6">
-        <div class="card">
-          <div class="card-header">Daily Revenue</div>
-          <div class="card-body">
-            <div id="dailyRevenueChart"></div>
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header">Daily Revenue</div>
+            <div class="card-body">
+              <div id="dailyRevenueChart"></div>
+            </div>
           </div>
         </div>
-      </div>
-
+    
       <div class="col-lg-6">
         <div class="card">
           <div class="card-header">Revenue vs Expense vs Profit</div>
@@ -181,10 +190,8 @@
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="row section g-3">
-      <div class="col-lg-6">
+        <div class="col-lg-6">
         <div class="card">
           <div class="card-header"></div>
           <div class="card-body">
@@ -192,6 +199,10 @@
           </div>
         </div>
       </div>
+   
+
+
+   
 
       <div class="col-lg-6">
         <div class="card">
@@ -260,13 +271,14 @@
     </div>
   </div>
 </main>
+
+{% endif %}
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 <script>
+  
+
   document.addEventListener("DOMContentLoaded", function () {
-    // =========================
-    // 🎨 COLOR UTILITIES
-    // =========================
     function getRandomColor() {
       const colors = [
         "#0d6efd",
@@ -295,9 +307,57 @@
     const days = JSON.parse("{{ days|escapejs }}");
     const dailyRevenue = JSON.parse("{{ daily_revenue|escapejs }}");
 
-    // =========================
-    // 🔥 LEAD FUNNEL (Dynamic Colors)
-    // =========================
+  
+      const labels = JSON.parse('{{ user_labels|safe }}');
+    const values = JSON.parse('{{ user_values|safe }}');
+
+  function getRandomColor() {
+    return `hsl(${Math.floor(Math.random()*360)}, 70%, 55%)`;
+  }
+
+  new ApexCharts(document.querySelector("#UserChart"), {
+    chart: {
+      type: "bar",
+      height: 350,
+      toolbar: { show: false }
+    },
+
+    series: [{
+      name: "Users",
+      data: values
+    }],
+
+    xaxis: {
+      categories: labels
+    },
+
+    colors: values.map(() => getRandomColor()),
+
+    plotOptions: {
+      bar: {
+        distributed: true,
+        borderRadius: 8,
+        columnWidth: "45%"
+      }
+    },
+
+    dataLabels: {
+      enabled: true
+    },
+
+    grid: {
+      borderColor: "#eee"
+    },
+
+    tooltip: {
+      y: {
+        formatter: (val) => val + " users"
+      }
+    }
+
+  }).render();
+  
+   
     new ApexCharts(document.querySelector("#leadFunnelChart"), {
       chart: { type: "bar", height: 350 },
       series: [{ name: "Leads", data: leadFunnel }],
@@ -325,9 +385,6 @@
       },
     }).render();
 
-    // =========================
-    // 📊 MONTHLY REVENUE (Dynamic Color)
-    // =========================
     new ApexCharts(document.querySelector("#revenueChart"), {
       chart: { type: "area", height: 350 },
       series: [{ name: "Revenue", data: revenue }],
@@ -345,9 +402,6 @@
       },
     }).render();
 
-    // =========================
-    // 📊 DAILY REVENUE (Dynamic Color)
-    // =========================
     new ApexCharts(document.querySelector("#dailyRevenueChart"), {
       chart: { type: "bar", height: 350 },
       series: [{ name: "Daily Revenue", data: dailyRevenue }],
@@ -363,10 +417,7 @@
       },
     }).render();
 
-    // =========================
-    // 💥 PROFIT CHART (SMART COLORS)
-    // =========================
-
+    
     const profitColor = profit.some((p) => p < 0) ? "#ff0000" : "#0d6efd";
 
     new ApexCharts(document.querySelector("#profitChart"), {
@@ -401,18 +452,12 @@
       legend: { position: "top" },
     }).render();
   });
-  const users = JSON.parse("{{ sales_users }}");
+  const users = JSON.parse('{{ sales_users|safe }}');
   const targets = JSON.parse("{{ sales_target|safe }}");
   const achieved = JSON.parse("{{ sales_achieved|safe }}");
-  // =========================
-  // 🛡️ SAFE DATA
-  // =========================
   const safeTargets = targets.map((v) => Number(v) || 0);
   const safeAchieved = achieved.map((v) => Number(v) || 0);
 
-  // =========================
-  // 🎨 SMART COLORS (NO NaN)
-  // =========================
   const achievedColors = safeAchieved.map((val, i) => {
     const target = safeTargets[i];
 
