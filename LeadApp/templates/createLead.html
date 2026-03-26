@@ -104,9 +104,21 @@
 <!-- REGION -->
 <div class="col-md-6">
 <label class="form-label">Region</label>
-<input type="text" class="form-control"
-       name="region"
-       value="{{ lead.region|default:'' }}">
+
+<select class="form-select" name="region" required>
+
+{% for value,label in REGION_CHOICES %}
+
+        <option value="{{ value }}"
+        {% if lead and lead.region == value %}selected{% endif %}>
+            {{ label }}
+        </option>
+
+  
+{% endfor %}
+
+</select>
+
 </div>
 
 <!-- STATUS -->

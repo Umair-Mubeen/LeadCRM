@@ -37,9 +37,11 @@
                 <div class="col-sm-6">
                   <ol class="breadcrumb float-sm-end">
                     <li class="breadcrumb-item">
-                      <a href="{% url 'dashboard' %}" style="color: black">Home</a>
+                      <a href="{% url 'dashboard' %}" style="color: black"
+                        >Home</a
+                      >
                     </li>
-                                              {% if request.user.profile.is_admin or  request.user.profile.is_lgs %}
+                    {% if request.user.profile.is_admin or request.user.profile.is_lgs %}
 
                     <li class="breadcrumb-item" aria-current="page">
                       <a href="{% url 'AddLead' %}" style="color: black"
@@ -67,8 +69,10 @@
                     <th>Assigned</th>
                     <th>Priority</th>
                     <th>Status</th>
-                    <th>Next Followup</th>
+                    <th>Requirement</th>
                     <th>Source</th>
+                    <th>Region</th>
+
                     <th>Budget</th>
                     <th>Added</th>
                     <th>Created By</th>
@@ -116,10 +120,13 @@
                     </td>
 
                     <td>
-                      {% if lead.latest_followup and lead.latest_followup.next_followup_date %} {{lead.latest_followup.next_followup_date }} {% else %} — {%endif %}
+                      {{lead.requirements}}
+                      <!-- {% if lead.latest_followup and lead.latest_followup.next_followup_date %} {{lead.latest_followup.next_followup_date }} {% else %} — {%endif %} -->
                     </td>
 
                     <td>{{ lead.get_source_display }}</td>
+                    <td>{{ lead.region }}</td>
+
                     <td>{{ lead.budget|default:"—" }}</td>
                     <td>{{ lead.date_added|date:"Y-m-d" }}</td>
                     <td>{{ lead.lead_created_by }}</td>
@@ -137,8 +144,8 @@
 
                         <ul class="dropdown-menu">
                           <!-- Edit only Admin & LGS -->
-                          {% if request.user.profile.is_admin or  request.user.profile.is_lgs or  request.user.profile.is_salesman  %}
-                         
+                          {% if request.user.profile.is_admin or request.user.profile.is_lgs or request.user.profile.is_salesman %}
+
                           <li>
                             <a
                               class="dropdown-item"
@@ -150,8 +157,8 @@
                           {% endif %}
 
                           <!-- Followup Admin / LGS / Salesman -->
-                          {% if request.user.profile.is_admin or  request.user.profile.is_salesman %}
-                          
+                          {% if request.user.profile.is_admin or request.user.profile.is_salesman %}
+
                           <li>
                             <a
                               class="dropdown-item"
@@ -171,25 +178,27 @@
                     </td>
 
                     <td>
-                    <button
-  class="btn btn-sm btn-outline-secondary"
-  data-bs-toggle="collapse"
-  data-bs-target="#collapse{{ lead.id }}"
-  aria-expanded="false"
-  {% if request.user.profile.is_lgs %}disabled{% endif %}
->
-  <i class="bi bi-chevron-down"></i>
-</button> 
+                      <button
+                        class="btn btn-sm btn-outline-secondary"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse{{ lead.id }}"
+                        aria-expanded="false"
+                        {%
+                        if
+                        request.user.profile.is_lgs
+                        %}disabled{%
+                        endif
+                        %}
+                      >
+                        <i class="bi bi-chevron-down"></i>
+                      </button>
                     </td>
                   </tr>
 
                   <!-- COLLAPSE -->
-                   {% include 'lead_activity_timeline.html' with lead=lead %}
-                  
-          
-                  {% empty %}
+                  {% include 'lead_activity_timeline.html' with lead=lead %} {% empty %}
                   <tr>
-                    <td colspan="12" class="text-center text-muted">
+                    <td colspan="13" class="text-center text-muted">
                       No leads found.
                     </td>
                   </tr>
@@ -221,27 +230,21 @@
   }
 </script>
 
-
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-
+  document.addEventListener("DOMContentLoaded", function () {
     let hash = window.location.hash;
 
     if (hash) {
+      let collapseElement = document.querySelector(hash);
 
-        let collapseElement = document.querySelector(hash);
+      if (collapseElement) {
+        let bsCollapse = new bootstrap.Collapse(collapseElement, {
+          toggle: true,
+        });
 
-        if (collapseElement) {
-
-            let bsCollapse = new bootstrap.Collapse(collapseElement, {
-                toggle: true
-            });
-
-            // optional: scroll to the lead
-            collapseElement.scrollIntoView({behavior: "smooth"});
-        }
-
+        // optional: scroll to the lead
+        collapseElement.scrollIntoView({ behavior: "smooth" });
+      }
     }
-
-});
+  });
 </script>

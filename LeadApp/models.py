@@ -113,6 +113,14 @@ class Lead(SoftDeleteModel):
         ('other', 'Other'),
     ]
 
+    REGION_CHOICES = [
+        ('Australia', 'Australia'),
+        ('America', 'America'),
+        ('England', 'England'),
+        ('Canada', 'Canada'),
+        ('Ireland', 'Ireland'),
+    ]
+
     STATUS_CHOICES = [
         ('new', 'New'),
         ('contacted', 'Contacted'),
@@ -128,6 +136,7 @@ class Lead(SoftDeleteModel):
         ('medium', 'Medium'),
         ('high', 'High'),
     ]
+
 
     VERIFIED = [
         ('verified', 'Verified'),

@@ -508,6 +508,7 @@ def AddEditLead(request, leadId=None):
         "PRIORITY_CHOICES": Lead.PRIORITY_CHOICES,
         "SOURCE_CHOICES": Lead.SOURCE_CHOICES,
         "VERIFIED": Lead.VERIFIED,
+        "REGION_CHOICES" : Lead.REGION_CHOICES,
         
         "next_url": next_url,
     })
