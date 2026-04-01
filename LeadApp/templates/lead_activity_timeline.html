@@ -148,7 +148,7 @@ Duration: {{ call.call_duration }} sec
 
 <div class="mt-1 small text-muted">
 <i class="bi bi-person"></i>
-{{ f.created_by.get_full_name|default:f.created_by.username }}
+{{ f.created_by.username|default:f.created_by.username }}
 </div>
 
 <p class="mb-0 mt-2">

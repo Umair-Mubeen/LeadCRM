@@ -132,7 +132,7 @@
         >
           <h3>
             {% if net_profit < 0 %} Loss: Rs {{ net_profit }} {% else %} Profit:
-            Rs {{ net_profit }} {% endif %}
+            Rs {{ net_profit|floatformat:0 }} {% endif %}
           </h3>
           <p>Net Profit</p>
           <i class="bi bi-graph-up-arrow kpi-icon"></i>
@@ -244,7 +244,7 @@
 
         <div class="col-lg-6">
           <div class="card">
-            <div class="card-header">Followups Today</div>
+            <div class="card-header">Lead Followups</div>
             <div class="card-body p-0">
               <table class="table table-hover">
                 <thead>
@@ -308,8 +308,8 @@
     const dailyRevenue = JSON.parse("{{ daily_revenue|escapejs }}");
 
   
-      const labels = JSON.parse('{{ user_labels|safe }}');
-    const values = JSON.parse('{{ user_values|safe }}');
+      const labels = JSON.parse('{{ user_labels|escapejs }}');
+    const values = JSON.parse('{{ user_values|escapejs }}');
 
   function getRandomColor() {
     return `hsl(${Math.floor(Math.random()*360)}, 70%, 55%)`;
@@ -385,23 +385,73 @@
       },
     }).render();
 
-    new ApexCharts(document.querySelector("#revenueChart"), {
-      chart: { type: "area", height: 350 },
-      series: [{ name: "Revenue", data: revenue }],
-      colors: [getRandomColor()],
-      stroke: { curve: "smooth", width: 3 },
-      fill: {
-        type: "gradient",
-        gradient: { opacityFrom: 0.4, opacityTo: 0.1 },
-      },
-      xaxis: { categories: months },
-      tooltip: {
-        y: {
-          formatter: (val) => "Rs " + val,
-        },
-      },
-    }).render();
+    const revenueColors = months.map((_, i) => {
+  const palette = [
+    "#0d6efd", "#20c997", "#ffc107", "#6610f2",
+    "#fd7e14", "#dc3545", "#198754", "#6f42c1",
+    "#0dcaf0", "#ff6b6b", "#845ef7", "#51cf66"
+  ];
+  return palette[i % palette.length];
+});
 
+new ApexCharts(document.querySelector("#revenueChart"), {
+  chart: {
+    type: "bar",
+    height: 350,
+    toolbar: { show: false }
+  },
+
+  series: [{
+    name: "Revenue",
+    data: revenue
+  }],
+
+  colors: revenueColors,
+
+  plotOptions: {
+    bar: {
+      distributed: true, // 🔥 each bar different color
+      borderRadius: 8,
+      columnWidth: "45%"
+    }
+  },
+
+  dataLabels: {
+    enabled: true,
+    formatter: function (val) {
+      return "Rs " + val.toLocaleString();
+    },
+    style: {
+      fontSize: "12px"
+    }
+  },
+
+  xaxis: {
+    categories: months,
+    labels: {
+      style: {
+        fontSize: "12px"
+      }
+    }
+  },
+
+  yaxis: {
+    labels: {
+      formatter: (val) => "Rs " + val.toLocaleString()
+    }
+  },
+
+  grid: {
+    borderColor: "#eee"
+  },
+
+  tooltip: {
+    y: {
+      formatter: (val) => "Rs " + val.toLocaleString()
+    }
+  }
+
+}).render();
     new ApexCharts(document.querySelector("#dailyRevenueChart"), {
       chart: { type: "bar", height: 350 },
       series: [{ name: "Daily Revenue", data: dailyRevenue }],
@@ -421,40 +471,82 @@
     const profitColor = profit.some((p) => p < 0) ? "#ff0000" : "#0d6efd";
 
     new ApexCharts(document.querySelector("#profitChart"), {
-      chart: { type: "line", height: 350 },
-      series: [
-        { name: "Revenue", data: revenue },
-        { name: "Expenses", data: expense },
-        { name: "Profit", data: profit },
-      ],
-      colors: [
-        "#198754", // Revenue (Green)
-        "#dc3545", // Expense (Red)
-        profitColor, // Profit dynamic
-      ],
-      stroke: { curve: "smooth", width: 3 },
-      markers: { size: 5 },
-      fill: {
-        type: "gradient",
-        gradient: { opacityFrom: 0.3, opacityTo: 0.05 },
-      },
-      xaxis: { categories: months },
-      yaxis: {
-        labels: {
-          formatter: (val) => "Rs " + val,
-        },
-      },
-      tooltip: {
-        y: {
-          formatter: (val) => "Rs " + val,
-        },
-      },
-      legend: { position: "top" },
-    }).render();
-  });
-  const users = JSON.parse('{{ sales_users|safe }}');
-  const targets = JSON.parse("{{ sales_target|safe }}");
-  const achieved = JSON.parse("{{ sales_achieved|safe }}");
+  chart: {
+    type: "bar",
+    height: 350,
+    toolbar: { show: false }
+  },
+
+  series: [
+    { name: "Revenue", data: revenue },
+    { name: "Expenses", data: expense },
+    { name: "Profit", data: profit }
+  ],
+
+  colors: [
+    "#198754", // Revenue
+    "#dc3545", // Expense
+    "#0d6efd"  // Profit
+  ],
+
+  plotOptions: {
+    bar: {
+      columnWidth: "22%", // 🔥 spacing fix
+      borderRadius: 6
+    }
+  },
+
+  dataLabels: {
+    enabled: true,
+    enabledOnSeries: [2], // 🔥 show only Profit labels (avoid overlap)
+    offsetY: -10,
+    formatter: (val) => "" + val.toLocaleString(),
+    style: {
+      fontSize: "10px"
+    }
+  },
+
+  xaxis: {
+    categories: months,
+    tickPlacement: "between", // 🔥 better spacing
+    labels: {
+      style: { fontSize: "12px" }
+    }
+  },
+
+  yaxis: {
+    labels: {
+      formatter: (val) => "Rs " + val.toLocaleString()
+    }
+  },
+
+  grid: {
+    borderColor: "#eee",
+    strokeDashArray: 4,
+    padding: {
+      left: 15,
+      right: 15
+    }
+  },
+
+  tooltip: {
+    shared: true,
+    intersect: false,
+    y: {
+      formatter: (val) => "Rs " + val.toLocaleString()
+    }
+  },
+
+  legend: {
+    position: "top",
+    horizontalAlign: "left"
+  }
+
+}).render();
+
+  const users = JSON.parse('{{ sales_users|escapejs }}');
+  const targets = JSON.parse("{{ sales_target|escapejs }}");
+  const achieved = JSON.parse("{{ sales_achieved|escapejs }}");
   const safeTargets = targets.map((v) => Number(v) || 0);
   const safeAchieved = achieved.map((v) => Number(v) || 0);
 
@@ -470,8 +562,7 @@
 
     return "#dc3545";
   });
-
-  new ApexCharts(document.querySelector("#salesTargetChart"), {
+ new ApexCharts(document.querySelector("#salesTargetChart"), {
     chart: {
       type: "bar",
       height: 350,
@@ -535,75 +626,179 @@
       position: "top",
     },
   }).render();
-</script>
+}); // DOMContentLoaded closing
+ </script>
 
 <script>
-  fetch("/sales-chart-data/")
-    .then((res) => res.json())
-    .then((data) => {
-      var options = {
+let salesChart;
+
+fetch("/sales-chart-data/")
+  .then((res) => res.json())
+  .then((data) => {
+
+    if (salesChart) salesChart.destroy();
+
+    salesChart = new ApexCharts(
+      document.querySelector("#salesChart"),
+      {
         chart: {
           type: "bar",
           height: 350,
+          toolbar: { show: false }
         },
+
         series: [
-          {
-            name: "Target",
-            data: data.targets,
-          },
-          {
-            name: "Achieved",
-            data: data.achieved,
-          },
+          { name: "Target", data: data.targets },
+          { name: "Achieved", data: data.achieved }
         ],
-        xaxis: {
-          categories: data.labels, // 🔥 UPDATED
+
+        plotOptions: {
+          bar: {
+            borderRadius: 6,
+            columnWidth: "80%", // 🔥 MAIN spacing control
+            endingShape: "rounded"
+          }
         },
-        colors: ["#28a745", "#007bff"],
+
+        
+
+        dataLabels: {
+          enabled: true,
+    
+          formatter: (val) => "" + val.toLocaleString(),
+          style: {
+            fontSize: "10px"
+          }
+        },
+
+        xaxis: {
+          categories: data.labels,
+          labels: {
+            style: { fontSize: "10px" }
+          }
+        },
+
+        yaxis: {
+          labels: {
+            formatter: (val) => "Rs " + val.toLocaleString()
+          }
+        },
+
+        colors: ["#198754", "#0d6efd"],
+
+        tooltip: {
+          shared: true,
+          intersect: false,
+          y: {
+            formatter: (val) => "Rs " + val.toLocaleString()
+          }
+        },
+
+        legend: {
+          position: "top",
+          horizontalAlign: "left"
+        },
+
+        grid: {
+          borderColor: "#eee",
+          strokeDashArray: 4,
+          padding: {
+            left: 20,
+            right: 20
+          }
+        },
+
         title: {
           text: "Sales Target vs Achieved (User-wise)",
           align: "left",
-        },
-      };
+          style: {
+            fontSize: "14px",
+            fontWeight: "600"
+          }
+        }
+      }
+    );
 
-      var chart = new ApexCharts(
-        document.querySelector("#salesChart"),
-        options,
-      );
-      chart.render();
-    });
-</script>
+    salesChart.render();
+  });
 
+  let multiChart;
 
-<script>
-  fetch("{% url 'multi_sales_chart' %}")
-    .then((res) => res.json())
-    .then((data) => {
-      var options = {
+fetch("{% url 'multi_sales_chart' %}")
+  .then((res) => res.json())
+  .then((data) => {
+
+    if (multiChart) multiChart.destroy();
+
+    multiChart = new ApexCharts(
+      document.querySelector("#multiSalesChart"),
+      {
         chart: {
           type: "bar",
           height: 400,
+          toolbar: { show: false }
         },
-        series: data.series, // 🔥 multiple users
+
+        series: data.series,
+
         xaxis: {
           categories: data.months,
+          labels: {
+            style: { fontSize: "12px" }
+          }
         },
+
         plotOptions: {
           bar: {
             horizontal: false,
-            columnWidth: "50%",
-          },
+            columnWidth: "45%",
+            borderRadius: 6
+          }
         },
+
+        dataLabels: {
+          enabled: false
+        },
+
+        // 🎨 dynamic colors per user
+        colors: data.series.map((_, i) => {
+          const palette = [
+            "#0d6efd", "#20c997", "#ffc107",
+            "#6610f2", "#fd7e14", "#dc3545",
+            "#198754", "#6f42c1", "#0dcaf0"
+          ];
+          return palette[i % palette.length];
+        }),
+
+        tooltip: {
+          shared: true,
+          intersect: false,
+          y: {
+            formatter: (val) => "Rs " + val.toLocaleString()
+          }
+        },
+
+        legend: {
+          position: "top",
+          horizontalAlign: "left"
+        },
+
+        grid: {
+          borderColor: "#eee",
+          strokeDashArray: 4
+        },
+
         title: {
           text: "Sales Performance (User Comparison)",
           align: "left",
-        },
-      };
+          style: {
+            fontSize: "14px",
+            fontWeight: "600"
+          }
+        }
+      }
+    );
 
-      var chart = new ApexCharts(
-        document.querySelector("#multiSalesChart"),
-        options,
-      );
-      chart.render();
-    });
+    multiChart.render();
+  });
 </script>

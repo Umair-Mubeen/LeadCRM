@@ -42,4 +42,6 @@ path("expense/delete/<int:id>/", views.DeleteExpense, name="expense_delete"),
 path("sales-chart-data/", views.sales_chart_data, name="sales_chart_data"),
 path("multi-sales-chart/", views.multi_user_sales_chart, name="multi_sales_chart"),
 
+path("layout/", views.layout, name="layout"),
+
 ]
