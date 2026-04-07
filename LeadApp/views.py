@@ -59,13 +59,6 @@ def logout_view(request):
     logout(request)
     return redirect('/')
 
-from django.shortcuts import render
-from django.http import HttpResponse
-from django.db.models import Sum, Count
-from django.utils import timezone
-from django.db.models.functions import TruncMonth, TruncDate
-import json
-
 
 def dashboard(request):
     try:
