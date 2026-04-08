@@ -109,7 +109,7 @@
                   </p>
                 </a>
                 <ul class="nav nav-treeview" role="navigation" aria-label="Navigation 4">
-                               {% if user.is_superuser %}
+                               {% if user.profile.role != "SALESMAN" %}
 
                                
                   <li class="nav-item">
