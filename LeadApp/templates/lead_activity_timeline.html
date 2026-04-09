@@ -257,6 +257,10 @@ title="Edit Assignment"
 </p>
 
 <p><strong>Lead Requirements :</strong> {{ lead.requirements|default:"—" }}</p>
+<p style="text-align: justify;"><strong>Lead Descriptions :</strong> {{ lead.lead_brief|default:"—" }}</p>
+<p style="text-align: justify;"><strong>Website :</strong> <a href="{{ lead.domain_name }}" target="_blank">{{ lead.domain_name }} </a></p>
+<p style="text-align: justify;"><strong>Social Accounts :</strong> <a href="{{ lead.social_accounts }}" target="_blank">{{ lead.social_accounts }} </a></p>
+
 
 </div>
 

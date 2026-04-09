@@ -2,7 +2,7 @@
   {% load static %}
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>LeadCRM | Lead FollowUp</title>
+    <title>LeadCRM | Lead Email </title>
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, user-scalable=yes"
@@ -62,7 +62,7 @@
           <div class="container-fluid">
             <div class="row">
               <div class="col-sm-6">
-                <h3 class="mb-0">LeadCRM | Lead FollowUp</h3>
+                <h3 class="mb-0">LeadCRM | Email</h3>
               </div>
               <div class="col-sm-6">
                 <ol class="breadcrumb float-sm-end">
@@ -96,12 +96,12 @@
 
                   <!-- Followup Note -->
                   <div class="mb-3">
-                    <label class="form-label">Follow-up Note</label>
+                    <label class="form-label">Email Note</label>
                     <textarea
                       class="form-control"
                       name="note"
                       rows="4"
-                      placeholder="Enter follow-up details...">{% if followup %}{{ followup.note }}{% endif %}</textarea>
+                      placeholder="Enter Email details...">{% if followup %}{{ followup.note }}{% endif %}</textarea>
                   </div>
 
                   <!-- Next Follow-up Date -->
