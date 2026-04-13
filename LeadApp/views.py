@@ -23,6 +23,7 @@ from django.utils.timezone import now
 from decimal import Decimal, InvalidOperation
 from django.http import JsonResponse
 from calendar import month_name
+from django.http import HttpResponseForbidden
 
 def role_required(allowed_roles):
     def decorator(view_func):
@@ -46,8 +47,19 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
 
         if user:
-            login(request, user)
-            return redirect('dashboard')
+            profile = request.user.profile
+            print(profile)
+            if request.profile.is_admin:
+                return redirect('admin_dashboard')
+
+            elif request.profile.is_salesman:
+                return redirect('salesman_dashboard')
+
+            elif request.profile.is_lgs:
+                return redirect('lgs_dashboard')
+        # if user:
+        #     login(request, user)
+        #     return redirect('dashboard')
 
         return render(request, 'login.html', {'error': 'Invalid username or password'})
 
@@ -1168,3 +1180,49 @@ def multi_user_sales_chart(request):
         "months": months,
         "series": series
     })
+
+
+
+@login_required
+@role_required('SALESMAN')
+def salesman_dashboard(request):
+    user = request.user
+
+    deals = Deal.objects.filter(salesman=user)
+    closed_deals = deals.filter(status='WON')
+
+    payments = DealInstallment.objects.filter(deal__salesman=user)
+
+    context = {
+        'total_deals': deals.count(),
+        'closed_deals': closed_deals.count(),
+        'total_revenue': sum(p.amount for p in payments),
+        'commission_rate': user.profile.commission_percentage
+    }
+
+    return render(request, 'dashboard/salesman.html', context)
+
+
+@login_required
+@role_required('LGS')
+def lgs_dashboard(request):
+    user = request.user
+    leads = Lead.objects.filter(created_by=user)
+    context = {
+        'total_leads': leads.count(),
+        'converted': leads.filter(status='converted').count(),
+        'pending': leads.filter(status='new').count(),
+        'commission_rate': user.profile.commission_percentage
+    }
+
+    return render(request, 'dashboard/lgs.html', context)
+
+
+def role_required(role):
+    def decorator(view_func):
+        def wrapper(request, *args, **kwargs):
+            if request.user.profile.role != role:
+                return HttpResponseForbidden("You are not allowed here")
+            return view_func(request, *args, **kwargs)
+        return wrapper
+    return decorator

@@ -44,4 +44,7 @@ path("multi-sales-chart/", views.multi_user_sales_chart, name="multi_sales_chart
 
 path("layout/", views.layout, name="layout"),
 
+   path('dashboard/salesman/', views.salesman_dashboard, name='salesman_dashboard'),
+    path('dashboard/lgs/', views.lgs_dashboard, name='lgs_dashboard'),
+
 ]
