@@ -1,0 +1,210 @@
+  <html>
+    {% load static %}
+   <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>LeadCRM | Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#007bff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
+    <meta name="title" content="AdminLTE v4 | Dashboard" />
+    <meta name="author" content="ColorlibHQ" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <link rel="preload" href="{% static 'css/adminlte.css' %}" as="style" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
+      integrity="sha256-tXJfXfp6Ewt1ilPzLDtQnJV4hclT9XuaZUKyUvmyr+Q="
+      crossorigin="anonymous"
+      media="print"
+      onload="this.media='all'"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="{% static 'css/adminlte.css' %}" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.css"
+      integrity="sha256-4MX+61mt9NVvvuPjUWdUdyfZfxSB1/Rf9WtqRHgG5S0="
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/css/jsvectormap.min.css"
+      integrity="sha256-+uGLJmmTKOqBr+2E6KDYs/NRsHxSkONXFHUL0fy2O/4="
+      crossorigin="anonymous"
+    />
+  </head>
+    <body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">
+    
+    <div class="app-wrapper">
+<div class="app-content p-3">
+
+  <!-- 🔥 TOP CARDS -->
+  <div class="row">
+
+    <div class="col-lg-3 col-6">
+      <div class="small-box text-bg-primary">
+        <div class="inner">
+          <h3>{{ total_deals }}</h3>
+          <p>Total Deals</p>
+        </div>
+        <i class="bi bi-briefcase small-box-icon"></i>
+      </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+      <div class="small-box text-bg-success">
+        <div class="inner">
+          <h3>Rs {{ monthly_revenue }}</h3>
+          <p>Monthly Revenue</p>
+        </div>
+        <i class="bi bi-currency-dollar small-box-icon"></i>
+      </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+      <div class="small-box text-bg-warning">
+        <div class="inner">
+          <h3>Rs {{ commission_pending }}</h3>
+          <p>Pending Commission</p>
+        </div>
+        <i class="bi bi-wallet2 small-box-icon"></i>
+      </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+      <div class="small-box text-bg-info">
+        <div class="inner">
+          <h3>{{ achievement_percent }}%</h3>
+          <p>Target Achievement</p>
+        </div>
+        <i class="bi bi-graph-up small-box-icon"></i>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 📊 CHART -->
+  <div class="row mt-4">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Revenue Trend</h3>
+        </div>
+        <div class="card-body">
+          <div id="salesChart"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🎯 TARGET -->
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Target Progress</h3>
+        </div>
+        <div class="card-body text-center">
+          <h2>{{ achievement_percent }}%</h2>
+          <p>Target: Rs {{ target }}</p>
+          <p>Achieved: Rs {{ monthly_revenue }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📋 RECENT DEALS -->
+  <div class="card mt-4">
+    <div class="card-header">
+      <h3 class="card-title">Recent Deals</h3>
+    </div>
+    <div class="card-body table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Client</th>
+            <th>Value</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for deal in recent_deals %}
+          <tr>
+            <td>{{ deal.id }}</td>
+            <td>{{ deal.lead.first_name }}</td>
+            <td>Rs {{ deal.deal_value }}</td>
+            <td>{{ deal.payment_status }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+</div>
+
+    </body>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script src="{% static 'js/adminlte.js' %}"></script>
+
+     <script
+      src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"
+      crossorigin="anonymous"
+    ></script>
+
+     <script
+      src="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.min.js"
+      integrity="sha256-+vh8GkaU7C9/wbSLIcwq82tQ2wTf44aOHA8HlBMwRI8="
+      crossorigin="anonymous"
+    ></script>
+
+     <script
+      src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/js/jsvectormap.min.js"
+      integrity="sha256-/t1nN2956BT869E6H4V1dnt0X5pAQHPytli+1nTZm2Y="
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/maps/world.js"
+      integrity="sha256-XPpPaZlU8S/HWf7FZLAncLg2SAkP8ScUTII89x9D3lY="
+      crossorigin="anonymous"
+    ></script>
+    </html>
+
+<!-- 📊 Apex Chart -->
+<script>
+var options = {
+  chart: { type: 'line', height: 300 },
+  series: [{
+    name: "Revenue",
+    data: {{ monthly_revenue|default:"[]" }}
+  }],
+  xaxis: {
+    categories: {{ months|default:"[]" }}
+  }
+};
+new ApexCharts(document.querySelector("#salesChart"), options).render();
+</script>
+
+{% endblock %}

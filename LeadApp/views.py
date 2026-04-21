@@ -47,19 +47,10 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
 
         if user:
-            profile = request.user.profile
-            print(profile)
-            if request.profile.is_admin:
-                return redirect('admin_dashboard')
-
-            elif request.profile.is_salesman:
-                return redirect('salesman_dashboard')
-
-            elif request.profile.is_lgs:
-                return redirect('lgs_dashboard')
-        # if user:
-        #     login(request, user)
-        #     return redirect('dashboard')
+            print(user.profile.is_admin)
+          
+            login(request, user)
+            return redirect('dashboard')
 
         return render(request, 'login.html', {'error': 'Invalid username or password'})
 
@@ -1182,46 +1173,152 @@ def multi_user_sales_chart(request):
     })
 
 
-
 @login_required
-@role_required('SALESMAN')
+@role_required([UserProfile.ROLE_SALESMAN])
 def salesman_dashboard(request):
     user = request.user
+    today = timezone.now().date()
 
+    # =========================
+    # DEALS
+    # =========================
     deals = Deal.objects.filter(salesman=user)
-    closed_deals = deals.filter(status='WON')
+    total_deals = deals.count()
+    won_deals = deals.filter(payment_status="paid").count()
 
-    payments = DealInstallment.objects.filter(deal__salesman=user)
+    # =========================
+    # REVENUE
+    # =========================
+    revenue = DealInstallment.objects.filter(
+        deal__salesman=user,
+        is_deleted=False
+    ).aggregate(total=Sum("amount"))["total"] or 0
+
+    # =========================
+    # MONTHLY PERFORMANCE
+    # =========================
+    current_month = today.month
+    current_year = today.year
+
+    monthly_revenue = DealInstallment.objects.filter(
+        deal__salesman=user,
+        payment_date__month=current_month,
+        payment_date__year=current_year
+    ).aggregate(total=Sum("amount"))["total"] or 0
+
+    # =========================
+    # COMMISSION
+    # =========================
+    commission_total = Commission.objects.filter(
+        user=user,
+        is_deleted=False
+    ).aggregate(total=Sum("amount"))["total"] or 0
+
+    commission_paid = Commission.objects.filter(
+        user=user,
+        is_paid=True
+    ).aggregate(total=Sum("amount"))["total"] or 0
+
+    commission_pending = commission_total - commission_paid
+
+    # =========================
+    # TARGET
+    # =========================
+    target = SalesTarget.objects.filter(
+        user=user,
+        month=current_month,
+        year=current_year
+    ).aggregate(total=Sum("target_amount"))["total"] or 0
+
+    achievement_percent = (monthly_revenue / target * 100) if target else 0
+
+    # =========================
+    # RECENT DEALS
+    # =========================
+    recent_deals = deals.order_by("-id")[:5]
 
     context = {
-        'total_deals': deals.count(),
-        'closed_deals': closed_deals.count(),
-        'total_revenue': sum(p.amount for p in payments),
-        'commission_rate': user.profile.commission_percentage
+        "total_deals": total_deals,
+        "won_deals": won_deals,
+        "revenue": revenue,
+        "monthly_revenue": monthly_revenue,
+
+        "commission_total": commission_total,
+        "commission_paid": commission_paid,
+        "commission_pending": commission_pending,
+
+        "target": target,
+        "achievement_percent": round(achievement_percent, 2),
+
+        "recent_deals": recent_deals,
     }
 
-    return render(request, 'dashboard/salesman.html', context)
+    return render(request, "dashboard/salesman.html", context)
+
 
 
 @login_required
-@role_required('LGS')
+@role_required([UserProfile.ROLE_LGS])
 def lgs_dashboard(request):
     user = request.user
-    leads = Lead.objects.filter(created_by=user)
+    today = timezone.now().date()
+
+    # =========================
+    # LEADS
+    # =========================
+    leads = Lead.objects.filter(lead_created_by=user)
+
+    total_leads = leads.count()
+    converted = leads.filter(status="won").count()
+    pending = leads.exclude(status="won").count()
+
+    conversion_rate = (converted / total_leads * 100) if total_leads else 0
+
+    # =========================
+    # FOLLOWUPS
+    # =========================
+    followups_today = LeadFollowUp.objects.filter(
+        created_by=user,
+        next_followup_date=today,
+        is_completed=False
+    ).count()
+
+    # =========================
+    # ACTIVITY (CALL LOGS)
+    # =========================
+    calls = CallLog.objects.filter(user=user)
+
+    total_calls = calls.count()
+    successful_calls = calls.filter(call_status="connected").count()
+
+    # =========================
+    # RECENT LEADS
+    # =========================
+    recent_leads = leads.order_by("-date_added")[:5]
+
     context = {
-        'total_leads': leads.count(),
-        'converted': leads.filter(status='converted').count(),
-        'pending': leads.filter(status='new').count(),
-        'commission_rate': user.profile.commission_percentage
+        "total_leads": total_leads,
+        "converted": converted,
+        "pending": pending,
+        "conversion_rate": round(conversion_rate, 2),
+
+        "followups_today": followups_today,
+
+        "total_calls": total_calls,
+        "successful_calls": successful_calls,
+
+        "recent_leads": recent_leads,
     }
 
-    return render(request, 'dashboard/lgs.html', context)
+    return render(request, "dashboard/lgs.html", context)
 
 
-def role_required(role):
+
+def role_required(allowed_roles):
     def decorator(view_func):
+        @wraps(view_func)
         def wrapper(request, *args, **kwargs):
-            if request.user.profile.role != role:
+            if request.user.profile.role not in allowed_roles:
                 return HttpResponseForbidden("You are not allowed here")
             return view_func(request, *args, **kwargs)
         return wrapper
